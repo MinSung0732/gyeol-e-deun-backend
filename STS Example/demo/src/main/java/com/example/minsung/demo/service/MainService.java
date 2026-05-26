@@ -1,4 +1,4 @@
-package com.example.minsung.demo.MainService;
+package com.example.minsung.demo.service;
 
 import org.springframework.stereotype.Service;
 
