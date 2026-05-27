@@ -15,8 +15,11 @@ public class Member {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long memberId; // 회원 고유 ID (자동 생성)
 
+    @Column(nullable = false)
+    private String loginId; // 로그인 아이디 (예: "john123")
+
     @Column(nullable = false, unique = true)
-    private String email; // 로그인 ID로 사용할 이메일 주소
+    private String email; // 이메일은 고유해야 하므로 중복 검증 대상입니다.
 
     @Column(nullable = false)
     private String password; // 실제 서비스에서는 해시된 비밀번호를 저장해야 합니다.
@@ -26,6 +29,9 @@ public class Member {
 
     @Column(nullable = false, length = 20)
     private String phone; // 배송 연락처 (예: 010-1234-5678)
+
+    @Column(nullable = false)
+    private String birth; // 회원의 생년월일
 
     // 배송을 위한 주소 3종 세트
     @Column(nullable = false)

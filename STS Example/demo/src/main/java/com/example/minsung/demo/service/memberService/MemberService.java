@@ -34,8 +34,11 @@ public class MemberService {
 
         // 2. [알맹이 포장] 검증을 통과했다면 실제 DB에 넣을 빈 Member 객체를 만듭니다.
         Member member = new Member();
+        member.setLoginId(dto.getLoginId());
+        member.setPassword(dto.getPassword());
         member.setEmail(dto.getEmail());
         member.setName(dto.getName());
+        member.setBirth(dto.getBirth());
         member.setPhone(dto.getPhone());
         member.setZipcode(dto.getZipcode());
         member.setAddress(dto.getAddress());
@@ -51,18 +54,17 @@ public class MemberService {
     }
 
     // 로그인 핵심 비즈니스 로직
-    public String login(MemberLoginRequestDto dto) {
-        // 1. 이메일이 DB에 있는지 확인합니다.
-        Member member = memberRepository.findByEmail(dto.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+   public String login(MemberLoginRequestDto dto) {
+        // 1. 💡 이메일이 아닌 '아이디(loginId)'가 DB에 있는지 확인합니다.
+        Member member = memberRepository.findByLoginId(dto.getLoginId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 아이디입니다."));
 
-        // 2. 비밀번호가 맞는지 확인합니다. (DB의 암호화된 비번 vs 방금 입력한 비번 비교)
-        // matches(날것의 비번, 암호화된 비번) -> 스프링이 알아서 비교해 줍니다!
+        // 2. 비밀번호 확인
         if (!passwordEncoder.matches(dto.getPassword(), member.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        // 3. 이메일도 맞고 비번도 맞다면? 출입증(JWT)을 발급해서 리턴합니다!
-        return jwtUtil.generateToken(member.getEmail(), member.getRole());
+        // 3. 출입증(JWT) 발급 (토큰 안에는 보통 변하지 않는 고유 정보인 email이나 loginId를 넣습니다)
+        return jwtUtil.generateToken(member.getLoginId(), member.getRole());
     }
 }
