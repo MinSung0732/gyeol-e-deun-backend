@@ -11,6 +11,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/**") // 모든 주소에 대해
                 .allowedOrigins("http://localhost:5173") // 리액트(5173)의 접근을 허락해줘!
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
                 .allowCredentials(true);
     }
 }

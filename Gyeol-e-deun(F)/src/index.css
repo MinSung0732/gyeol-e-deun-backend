@@ -256,3 +256,54 @@ h1 {
   from { opacity: 0; transform: translateY(-5px); }
   to { opacity: 1; transform: translateY(0); }
 }
+.main-header {
+  display: flex;
+  justify-content: space-between; /* 로고는 왼쪽, 메뉴는 오른쪽 끝으로 배치 */
+  align-items: center;
+  padding: 15px 30px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #eaeaea;
+}
+
+/* 로고 글씨 */
+.logo-area h1 {
+  font-size: 24px;
+  color: #4A5C4E; /* 결이든 시그니처 초록 톤 */
+  margin: 0;
+}
+
+/* 💡 상단 우측 메뉴 그룹 */
+.top-nav-right {
+  font-size: 13px; /* 작게 배치 */
+  color: #666666;
+}
+
+.user-menu-group, .guest-menu-group {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* 글자들 사이 간격 */
+}
+
+.welcome-text {
+  margin-right: 15px; /* 인사말과 버튼 사이 여백 */
+  color: #555555;
+}
+
+/* 링크처럼 보이는 투명 버튼 스타일 */
+.btn-text-link {
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: #666666;
+  cursor: pointer;
+  padding: 0;
+}
+
+.btn-text-link:hover {
+  color: #333333;
+  text-decoration: underline; /* 마우스 올리면 밑줄 슥 */
+}
+
+.divider {
+  color: #cccccc;
+}

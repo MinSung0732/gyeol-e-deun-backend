@@ -67,4 +67,11 @@ public class MemberService {
         // 3. 출입증(JWT) 발급 (토큰 안에는 보통 변하지 않는 고유 정보인 email이나 loginId를 넣습니다)
         return jwtUtil.generateToken(member.getLoginId(), member.getRole());
     }
+
+    // 💡 컨트롤러의 요청을 받아 창고(Repository)에서 회원을 찾아다 주는 메서드
+    public Member findByLoginId(String loginId) {
+        return memberRepository.findByLoginId(loginId)
+                // 만약 창고에 그 아이디가 없다면 에러를 던집니다.
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+    }
 }
