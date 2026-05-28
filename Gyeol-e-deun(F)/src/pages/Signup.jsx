@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import DaumPostcode from 'react-daum-postcode'; // 🏡 주소 API 가져오기
-import '../index.css';
+import '../css/index.css'; // 디자인 통일을 위해 가져오기
+import '../css/auth.css'; // 회원가입 페이지 전용 스타일
 
 function Signup() {
   // --- [상태 정의: 바구니들] ---

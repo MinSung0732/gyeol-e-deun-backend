@@ -1,0 +1,98 @@
+.main-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.banner-section {
+  background-color: #f4f7f5;
+  padding: 40px;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 50px;
+}
+.banner-section h2 { color: #3a4a3e; font-size: 28px; margin-bottom: 10px; }
+.banner-section p { color: #666; font-size: 16px; }
+
+.product-section h3 {
+  font-size: 22px;
+  color: #333;
+  margin-bottom: 25px;
+  border-left: 4px solid #4A5C4E;
+  padding-left: 10px;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 30px;
+}
+
+.product-card {
+  background-color: #fff;
+  border: 1px solid #eef2ef;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+}
+
+.thumbnail-box {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  background-color: #f9f9f9;
+}
+.thumbnail-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; 
+}
+
+.badge.sold-out {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.product-info { padding: 15px; }
+.product-name { font-size: 16px; color: #333; margin: 0 0 8px 0; }
+.product-desc {
+  font-size: 13px;
+  color: #888;
+  height: 36px;
+  overflow: hidden;
+  text-overflow: ellipsis; 
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  margin-bottom: 15px;
+}
+
+.product-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.product-price { font-size: 18px; font-weight: bold; color: #222; }
+
+.btn-cart {
+  background-color: #4A5C4E;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.btn-cart:hover { background-color: #3a4a3e; }
+.btn-cart:disabled { background-color: #ccc; cursor: not-allowed; }

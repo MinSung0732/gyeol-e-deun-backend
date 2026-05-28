@@ -1,7 +1,11 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Header from './components/Header'; // 헤더 컴포넌트 (로그인 상태에 따라 다르게 보이는 메뉴 포함)
-import './index.css';
+import './css/index.css'; // 전체적인 디자인 통일을 위한 CSS
+import Signup from './pages/Signup';
+import Login from './pages/Login';
+import ProductList from './pages/ProductList';
+import AdminProductAdd from './pages/AdminProductAdd';
 
 function Home() {
   return (
@@ -20,6 +24,10 @@ function App() {
       <Header /> {/* 모든 페이지에서 보이는 헤더 컴포넌트 */}
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/products" element={<ProductList />} />
+        <Route path="/admin/product/add" element={<AdminProductAdd />} />
       </Routes>
     </BrowserRouter>
   );

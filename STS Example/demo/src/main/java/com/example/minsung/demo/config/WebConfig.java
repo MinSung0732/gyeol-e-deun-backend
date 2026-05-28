@@ -2,6 +2,7 @@ package com.example.minsung.demo.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
@@ -13,5 +14,13 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // 프론트엔드가 "/uploads/사진.png" 라고 요청하면,
+        registry.addResourceHandler("/uploads/**")
+                // 서버 컴퓨터의 실제 "uploads/" 폴더 안에서 사진을 꺼내어 보여줍니다!
+                .addResourceLocations("file:uploads/");
     }
 }

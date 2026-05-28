@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import '../index.css'; // 디자인 통일을 위해 가져오기
 import axios from 'axios'; // 백엔드와 통신하기 위한 도구
+import '../css/index.css'; // 디자인 통일을 위해 가져오기
+import '../css/header.css'; // 헤더 전용 스타일
 
 function Header() {
   const navigate = useNavigate();

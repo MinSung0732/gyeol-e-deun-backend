@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import '../index.css'; 
+import '../css/index.css'; // 디자인 통일을 위해 가져오기
+import '../css/auth.css'; // 로그인 페이지 전용 스타일
 
 function Login() {
   const navigate = useNavigate();

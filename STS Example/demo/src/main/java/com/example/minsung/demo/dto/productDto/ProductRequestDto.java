@@ -6,6 +6,7 @@ public class ProductRequestDto {
     private int stock;
     private String description;
     private String status; // "ON_SALE" 등
+    private String thumbnailUrl; // 사진 URL도 함께 받도록 필드 추가
 
     // Getter와 Setter
     public String getName() { return name; }
@@ -22,4 +23,7 @@ public class ProductRequestDto {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getThumbnailUrl() { return thumbnailUrl; }
+    public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
 }

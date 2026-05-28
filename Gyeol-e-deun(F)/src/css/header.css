@@ -1,0 +1,47 @@
+.main-header {
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;
+  padding: 15px 30px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.logo-area h1 {
+  font-size: 24px;
+  color: #4A5C4E; 
+  margin: 0;
+}
+
+.top-nav-right {
+  font-size: 13px; 
+  color: #666666;
+}
+
+.user-menu-group, .guest-menu-group {
+  display: flex;
+  align-items: center;
+  gap: 10px; 
+}
+
+.welcome-text {
+  margin-right: 15px; 
+  color: #555555;
+}
+
+.btn-text-link {
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: #666666;
+  cursor: pointer;
+  padding: 0;
+}
+.btn-text-link:hover {
+  color: #333333;
+  text-decoration: underline; 
+}
+
+.divider {
+  color: #cccccc;
+}

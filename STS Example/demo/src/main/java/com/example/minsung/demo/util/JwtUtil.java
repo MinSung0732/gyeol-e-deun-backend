@@ -45,4 +45,24 @@ public class JwtUtil {
         // 2. 내용물(Claims) 중에서 이름표(Subject)로 넣어둔 아이디를 꺼내서 반환합니다.
         return claims.getSubject();
     }
+
+    public String createToken(String loginId, String role) {
+        return Jwts.builder()
+                .setSubject(loginId)
+                .claim("role", role) // 🌿 이곳이 핵심! 토큰 안에 'ROLE_ADMIN'이라는 직인을 깊이 새겨 넣습니다.
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1시간
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    // 💡 2. 토큰에서 직인(권한)만 조심스레 꺼내보는 기능 추가
+    public String getRoleFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("role", String.class);
+    }
 }
