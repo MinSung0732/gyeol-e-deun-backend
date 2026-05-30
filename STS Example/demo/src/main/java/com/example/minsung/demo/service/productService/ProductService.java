@@ -17,6 +17,7 @@ public class ProductService {
     @Autowired
     private ProductRepository productRepository;
 
+
     // 상품 등록 기능
     public void registerProduct(ProductRequestDto dto) {
         Product product = new Product();
@@ -47,5 +48,14 @@ public class ProductService {
         
         // 4. 포장이 끝난 큰 박스를 반환(리턴)합니다!
         return dtoList;
+    }
+
+   // 💡 번호(id)표를 보고 특정 나눔 물품 하나만 정성껏 꺼내옵니다.
+    public ProductResponseDto getProductById(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("해당 물품을 찾을 수 없습니다."));
+
+        // 💡 붉은 줄이 뜨던 6줄의 코드를 다 지우고, 이 딱 한 줄로 끝냅니다!
+        return new ProductResponseDto(product);
     }
 }

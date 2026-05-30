@@ -32,4 +32,11 @@ public class ProductController {
         List<ProductResponseDto> products = productService.getAllProducts();
         return ResponseEntity.ok(products);
     }
+
+    // 💡 /api/products/1 처럼 번호를 달고 찾아오면, 해당 물품을 내어줍니다.
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductResponseDto> getProduct(@PathVariable Long id) {
+        ProductResponseDto product = productService.getProductById(id);
+        return ResponseEntity.ok(product);
+    }
 }

@@ -33,6 +33,8 @@ public class Product {
     private String thumbnailUrl; // 목록에 보여질 썸네일
     @Column(length = 500)
     private String detailImageUrl; // 상세 설명용 통이미지
+    @Column(length = 100)
+    private String category; // 카테고리 정보
 
     // 상품 상태 (예: "ON_SALE"(판매중), "SOLD_OUT"(품절), "HIDDEN"(숨김))
     @Column(nullable = false)

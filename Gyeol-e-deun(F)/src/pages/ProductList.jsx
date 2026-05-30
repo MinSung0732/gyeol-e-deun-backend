@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../css/index.css'; // 디자인 통일을 위해 가져오기
 import '../css/main.css'; // 메인 페이지 전용 스타일
+import { useNavigate } from 'react-router-dom';
 
 function ProductList() {
   // 💡 백엔드에서 받아온 상품 리스트를 담아둘 바구니
   const [products, setProducts] = useState([]);
   // 로딩 상태와 에러 상태를 관리하는 바구니
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // 💡 수정됨: 누구나 볼 수 있는 일반 주소(앞문)로 찾아갑니다!
@@ -42,10 +44,14 @@ function ProductList() {
         ) : (
           <div className="product-grid">
             {products.map((product) => (
-              /* 리액트에서 반복문을 돌릴 때는 고유한 key 값이 필수입니다! */
-              <div className="product-card" key={product.productId}>
+              <div 
+                className="product-card" 
+                key={product.productId}
+                // 💡 [3번] 물품 카드를 클릭하면 상세 방으로 사뿐히 넘어가도록 오솔길을 열어줍니다!
+                onClick={() => navigate(`/products/${product.productId}`)}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="thumbnail-box">
-                  {/* 이미지가 없을 때를 대비한 대체 텍스트나 기본 이미지 설정 */}
                   <img 
                     src={product.thumbnailUrl || "https://placehold.co/250x250?text=Gyeol-E-Deun"} 
                     alt={product.name} 

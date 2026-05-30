@@ -1,10 +1,12 @@
 package com.example.minsung.demo.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Entity
+@Data
 @Table(name = "email_verification") // DB에 생성될 테이블 이름
 public class EmailVerification {
 
@@ -23,20 +25,5 @@ public class EmailVerification {
 
     @Column(nullable = false)
     private boolean isVerified = false; // 👈 추가: 인증 성공 여부 (기본값 false)
-
-    // --- Getter와 Setter (유지보수를 위해 직접 구현) ---
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public String getCode() { return code; }
-    public void setCode(String code) { this.code = code; }
-
-    public LocalDateTime getExpirationTime() { return expirationTime; }
-    public void setExpirationTime(LocalDateTime expirationTime) { this.expirationTime = expirationTime; }
-
-    public boolean isVerified() { return isVerified; }
-    public void setVerified(boolean verified) { isVerified = verified; }
+    
 }

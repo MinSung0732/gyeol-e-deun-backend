@@ -66,7 +66,7 @@ function AdminProductAdd() {
       });
       
       alert('우리의 정성이 담긴 상품이 세상에 무사히 피어났습니다! 🌱');
-      navigate('/main');
+      navigate('/products'); // 상품 목록 페이지로 이동
 
     } catch (error) {
       console.error('전달 과정에서 아쉬운 오류가 발생했습니다.', error);
