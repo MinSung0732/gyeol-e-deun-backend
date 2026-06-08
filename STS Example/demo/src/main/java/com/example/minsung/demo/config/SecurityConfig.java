@@ -32,7 +32,7 @@ public class SecurityConfig {
                 // 💡 2. "사전 질문(OPTIONS)은 토큰이 없어도 무조건 통과시켜 줘!"
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() 
                 // (기존에 열어두신 주소들)
-                .requestMatchers("/uploads/**","/api/members/register", "/api/members/login", "/api/admin/products", "/api/auth/email/**").permitAll()
+                .requestMatchers("/uploads/**","/api/members/register", "/api/members/login", "/api/admin/products", "/api/products/**", "/api/auth/email/**").permitAll()
                 // 💡 핵심 추가: "/api/admin/..." 으로 시작하는 모든 주소는 관리자(ROLE_ADMIN)만 출입 가능!
                 .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                 // 장바구니 담기 등 그 외의 모든 요청은 반드시 출입증(JWT)이 있어야 통과!

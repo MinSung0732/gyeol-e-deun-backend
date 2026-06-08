@@ -26,8 +26,10 @@ public class ProductService {
         product.setStock(dto.getStock());
         product.setDescription(dto.getDescription());
         product.setStatus(dto.getStatus());
-        product.setThumbnailUrl(dto.getThumbnailUrl()); // 프론트에서 받은 사진 URL도 저장!
-        
+        product.setThumbnailUrl(dto.getThumbnailUrl());
+        product.setDetailImageUrl(dto.getDetailImageUrl());
+        product.setCategory(dto.getCategory());
+
         // 데이터베이스에 저장!
         productRepository.save(product);
     }

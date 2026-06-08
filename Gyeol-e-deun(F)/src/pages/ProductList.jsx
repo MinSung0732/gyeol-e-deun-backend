@@ -60,13 +60,20 @@ function ProductList() {
                 </div>
                 
                 <div className="product-info">
+                  {product.category && (
+                    <span className="product-category">{product.category}</span>
+                  )}
                   <h4 className="product-name">{product.name}</h4>
                   <p className="product-desc">{product.description}</p>
                   <div className="product-bottom">
                     <span className="product-price">
                       {product.price.toLocaleString()}원
                     </span>
-                    <button className="btn-cart" disabled={product.status === 'SOLD_OUT'}>
+                    <button
+                      className="btn-cart"
+                      disabled={product.status === 'SOLD_OUT'}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       담기
                     </button>
                   </div>
