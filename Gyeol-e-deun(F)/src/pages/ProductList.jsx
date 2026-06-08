@@ -3,6 +3,7 @@ import axios from 'axios';
 import '../css/index.css'; // 디자인 통일을 위해 가져오기
 import '../css/main.css'; // 메인 페이지 전용 스타일
 import { useNavigate } from 'react-router-dom';
+import { getPrimaryThumbnail } from '../utils/productImages';
 
 function ProductList() {
   // 💡 백엔드에서 받아온 상품 리스트를 담아둘 바구니
@@ -53,7 +54,7 @@ function ProductList() {
               >
                 <div className="thumbnail-box">
                   <img 
-                    src={product.thumbnailUrl || "https://placehold.co/250x250?text=Gyeol-E-Deun"} 
+                    src={getPrimaryThumbnail(product)} 
                     alt={product.name} 
                   />
                   {product.status === 'SOLD_OUT' && <span className="badge sold-out">품절</span>}

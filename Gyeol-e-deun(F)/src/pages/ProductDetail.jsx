@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import ImageCarousel from '../components/ImageCarousel';
+import { getThumbnailUrls } from '../utils/productImages';
 import '../css/main.css';
 
 const STATUS_LABEL = {
@@ -57,6 +59,7 @@ function ProductDetail() {
 
   const statusLabel = STATUS_LABEL[product.status] || product.status;
   const isSoldOut = product.status === 'SOLD_OUT';
+  const thumbnailImages = getThumbnailUrls(product);
 
   return (
     <main className="main-container detail-page">
@@ -66,17 +69,18 @@ function ProductDetail() {
 
       <div className="detail-content">
         <div className="detail-gallery">
-          <div className="detail-image-box">
-            <img
-              src={product.thumbnailUrl || 'https://placehold.co/500x500?text=Gyeol-E-Deun'}
-              alt={product.name}
-            />
-            {isSoldOut && <span className="badge sold-out detail-badge">품절</span>}
-          </div>
+          <ImageCarousel
+            key={product.productId}
+            images={thumbnailImages}
+            alt={product.name}
+            badge={isSoldOut ? (
+              <span className="badge sold-out detail-badge">품절</span>
+            ) : null}
+          />
 
           {product.detailImageUrl && (
             <div className="detail-image-box detail-image-secondary">
-              <img src={product.detailImageUrl} alt={`${product.name} 상세 이미지`} />
+              <img src={product.detailImageUrl} alt={`${product.name} 상세 소개`} />
             </div>
           )}
         </div>

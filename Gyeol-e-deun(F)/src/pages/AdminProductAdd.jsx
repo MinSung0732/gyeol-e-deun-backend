@@ -32,6 +32,54 @@ async function uploadImage(file, token) {
   return response.data;
 }
 
+const MAX_THUMBNAILS = 5;
+
+function ThumbnailGalleryUpload({ items, onAdd, onRemove }) {
+  const canAddMore = items.length < MAX_THUMBNAILS;
+
+  return (
+    <div className="form-group image-upload-group">
+      <label>썸네일 이미지 * (최대 {MAX_THUMBNAILS}장)</label>
+      <p className="field-hint">
+        상품 목록과 상세 페이지에 노출되는 이미지입니다. 첫 번째 이미지가 목록 대표 이미지로 사용됩니다.
+      </p>
+
+      <div className="thumbnail-grid">
+        {items.map((item, index) => (
+          <div className="thumbnail-slot" key={item.id}>
+            <img src={item.preview} alt={`썸네일 ${index + 1}`} />
+            <span className="thumbnail-order">{index === 0 ? '대표' : index + 1}</span>
+            <button
+              type="button"
+              className="btn-remove-thumb"
+              onClick={() => onRemove(item.id)}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+
+        {canAddMore && (
+          <label className="thumbnail-slot thumbnail-add">
+            <span>+ 추가</span>
+            <span className="thumb-count">{items.length}/{MAX_THUMBNAILS}</span>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                onAdd(files);
+                e.target.value = '';
+              }}
+            />
+          </label>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ImageUploadField({ label, hint, file, preview, onChange, required }) {
   return (
     <div className="form-group image-upload-group">
@@ -78,8 +126,7 @@ function AdminProductAdd() {
   const [status, setStatus] = useState('ON_SALE');
   const [description, setDescription] = useState('');
 
-  const [thumbnailFile, setThumbnailFile] = useState(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState(null);
+  const [thumbnailItems, setThumbnailItems] = useState([]);
   const [detailFile, setDetailFile] = useState(null);
   const [detailPreview, setDetailPreview] = useState(null);
 
@@ -99,9 +146,22 @@ function AdminProductAdd() {
       .catch(() => setIsAdmin(false));
   }, []);
 
-  const handleThumbnailChange = (file) => {
-    setThumbnailFile(file);
-    setThumbnailPreview(file ? URL.createObjectURL(file) : null);
+  const handleAddThumbnails = (files) => {
+    const remaining = MAX_THUMBNAILS - thumbnailItems.length;
+    const toAdd = files.slice(0, remaining).map((file) => ({
+      id: `${Date.now()}-${Math.random()}`,
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+    setThumbnailItems((prev) => [...prev, ...toAdd]);
+  };
+
+  const handleRemoveThumbnail = (id) => {
+    setThumbnailItems((prev) => {
+      const target = prev.find((item) => item.id === id);
+      if (target?.preview) URL.revokeObjectURL(target.preview);
+      return prev.filter((item) => item.id !== id);
+    });
   };
 
   const handleDetailChange = (file) => {
@@ -114,8 +174,8 @@ function AdminProductAdd() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!thumbnailFile) {
-      alert('상품 목록용 썸네일 이미지를 등록해 주세요.');
+    if (thumbnailItems.length === 0) {
+      alert('썸네일 이미지를 최소 1장 등록해 주세요.');
       return;
     }
 
@@ -134,9 +194,13 @@ function AdminProductAdd() {
     setIsSubmitting(true);
 
     try {
-      const thumbnailUrl = await uploadImage(thumbnailFile, token);
-      let detailImageUrl = '';
+      const thumbnailUrls = [];
+      for (const item of thumbnailItems) {
+        const url = await uploadImage(item.file, token);
+        thumbnailUrls.push(url);
+      }
 
+      let detailImageUrl = '';
       if (detailFile) {
         detailImageUrl = await uploadImage(detailFile, token);
       }
@@ -148,7 +212,8 @@ function AdminProductAdd() {
         description: description.trim(),
         category: resolvedCategory,
         status,
-        thumbnailUrl,
+        thumbnailUrls,
+        thumbnailUrl: thumbnailUrls[0],
         detailImageUrl,
       };
 
@@ -271,13 +336,10 @@ function AdminProductAdd() {
         <section className="form-section">
           <h3 className="section-title">이미지</h3>
 
-          <ImageUploadField
-            label="썸네일 이미지 *"
-            hint="상품 목록에 노출되는 대표 이미지입니다. 정사각형(1:1) 비율을 권장합니다."
-            file={thumbnailFile}
-            preview={thumbnailPreview}
-            onChange={handleThumbnailChange}
-            required
+          <ThumbnailGalleryUpload
+            items={thumbnailItems}
+            onAdd={handleAddThumbnails}
+            onRemove={handleRemoveThumbnail}
           />
 
           <ImageUploadField

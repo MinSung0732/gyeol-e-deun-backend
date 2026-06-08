@@ -1,12 +1,15 @@
 package com.example.minsung.demo.dto.productDto;
 
+import java.util.List;
+
 public class ProductRequestDto {
     private String name;
     private int price;
     private int stock;
     private String description;
     private String status; // "ON_SALE" 등
-    private String thumbnailUrl; // 사진 URL도 함께 받도록 필드 추가
+    private String thumbnailUrl;
+    private List<String> thumbnailUrls;
     private String detailImageUrl; // 상세 이미지 URL 추가
     private String category; // 카테고리 정보도 추가
 
@@ -28,6 +31,9 @@ public class ProductRequestDto {
 
     public String getThumbnailUrl() { return thumbnailUrl; }
     public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
+
+    public List<String> getThumbnailUrls() { return thumbnailUrls; }
+    public void setThumbnailUrls(List<String> thumbnailUrls) { this.thumbnailUrls = thumbnailUrls; }
 
     public String getDetailImageUrl() { return detailImageUrl; }
     public void setDetailImageUrl(String detailImageUrl) { this.detailImageUrl = detailImageUrl; }

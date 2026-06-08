@@ -98,6 +98,85 @@
   margin-top: 6px;
 }
 
+/* 썸네일 다중 업로드 */
+.thumbnail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.thumbnail-slot {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #dbe3dc;
+  background-color: #fff;
+}
+.thumbnail-slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumbnail-order {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background-color: rgba(74, 92, 78, 0.85);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.btn-remove-thumb {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.btn-remove-thumb:hover {
+  background-color: #c62828;
+}
+
+.thumbnail-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #c5d4c8;
+  background-color: #f8fbf9;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.thumbnail-add:hover {
+  border-color: #799a82;
+  background-color: #f0f5f1;
+}
+.thumbnail-add span {
+  color: #7a8c7f;
+  font-size: 14px;
+}
+.thumb-count {
+  font-size: 12px !important;
+  margin-top: 4px;
+  color: #999 !important;
+}
+.thumbnail-add input[type="file"] {
+  display: none;
+}
+
 /* 이미지 업로드 */
 .image-upload-group {
   margin-bottom: 24px;

@@ -5,7 +5,10 @@ import lombok.Data;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "product")
@@ -28,9 +31,14 @@ public class Product {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String description;
 
-    // 이미지 파일이 저장된 서버나 클라우드(S3) 경로
     @Column(length = 500)
-    private String thumbnailUrl; // 목록에 보여질 썸네일
+    private String thumbnailUrl;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "product_thumbnail", joinColumns = @JoinColumn(name = "product_id"))
+    @OrderColumn(name = "sort_order")
+    @Column(name = "image_url", length = 500)
+    private List<String> thumbnailUrls = new ArrayList<>();
     @Column(length = 500)
     private String detailImageUrl; // 상세 설명용 통이미지
     @Column(length = 100)

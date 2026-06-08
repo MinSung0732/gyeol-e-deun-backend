@@ -26,10 +26,17 @@ public class ProductService {
         product.setStock(dto.getStock());
         product.setDescription(dto.getDescription());
         product.setStatus(dto.getStatus());
-        product.setThumbnailUrl(dto.getThumbnailUrl());
         product.setDetailImageUrl(dto.getDetailImageUrl());
         product.setCategory(dto.getCategory());
 
+        List<String> urls = dto.getThumbnailUrls();
+        if (urls != null && !urls.isEmpty()) {
+            product.setThumbnailUrls(new ArrayList<>(urls));
+            product.setThumbnailUrl(urls.get(0));
+        } else if (dto.getThumbnailUrl() != null && !dto.getThumbnailUrl().isBlank()) {
+            product.setThumbnailUrl(dto.getThumbnailUrl());
+            product.setThumbnailUrls(new ArrayList<>(List.of(dto.getThumbnailUrl())));
+        }
         // 데이터베이스에 저장!
         productRepository.save(product);
     }
