@@ -27,7 +27,7 @@ function Header() {
       .then((response) => {
         // 백엔드가 토큰을 인정하고 이름을 돌려준 경우!
         setIsLoggedIn(true);
-        setUserName(response.data); // 백엔드가 보내준 진짜 이름(예: 민성)으로 세팅!
+        setUserName(response.data.name);
       })
       .catch((error) => {
         // 🚨 방금 설정한 '1시간'이 지났거나 토큰이 이상한 경우 여기서 잡힙니다.

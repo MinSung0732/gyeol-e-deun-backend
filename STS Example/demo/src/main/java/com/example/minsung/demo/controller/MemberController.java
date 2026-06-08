@@ -2,6 +2,7 @@ package com.example.minsung.demo.controller;
 
 
 import com.example.minsung.demo.dto.memberDto.MemberLoginRequestDto;
+import com.example.minsung.demo.dto.memberDto.MemberMeResponseDto;
 import com.example.minsung.demo.dto.memberDto.MemberRegisterRequestDto;
 import com.example.minsung.demo.entity.Member;
 import com.example.minsung.demo.service.memberService.MemberService;
@@ -78,8 +79,11 @@ public class MemberController {
             // 3. 창고에서 그 아이디를 가진 회원을 찾습니다.
             Member member = memberService.findByLoginId(loginId);
             
-            // 4. 회원의 '이름(Name)'만 딱 포장해서 200 OK와 함께 돌려보냅니다!
-            return ResponseEntity.ok(member.getName());
+            return ResponseEntity.ok(new MemberMeResponseDto(
+                member.getName(),
+                member.getLoginId(),
+                member.getRole()
+            ));
             
         } catch (Exception e) {
             // 토큰이 위조되었거나, 1시간이 지나서 만료되었다면 401(인증 실패) 에러를 던집니다.

@@ -1,119 +1,316 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import '../css/index.css'; // 디자인 통일을 위해 가져오기
-import '../css/admin.css'; // 이 페이지 전용 스타일
+import '../css/index.css';
+import '../css/admin.css';
 
+const CATEGORIES = [
+  '건강식품',
+  '생활용품',
+  '원예/식물',
+  '뷰티/케어',
+  '식품',
+  '기타',
+];
+
+const STATUS_OPTIONS = [
+  { value: 'ON_SALE', label: '판매중' },
+  { value: 'SOLD_OUT', label: '품절' },
+  { value: 'HIDDEN', label: '숨김 (목록 미노출)' },
+];
+
+async function uploadImage(file, token) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await axios.post('http://localhost:8080/api/admin/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+}
+
+function ImageUploadField({ label, hint, file, preview, onChange, required }) {
+  return (
+    <div className="form-group image-upload-group">
+      <label>{label}</label>
+      {hint && <p className="field-hint">{hint}</p>}
+      <div className="image-upload-area">
+        {preview ? (
+          <div className="image-preview-box">
+            <img src={preview} alt="미리보기" />
+            <button
+              type="button"
+              className="btn-remove-image"
+              onClick={() => onChange(null)}
+            >
+              이미지 제거
+            </button>
+          </div>
+        ) : (
+          <label className="image-dropzone">
+            <span>클릭하여 이미지 선택</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => onChange(e.target.files?.[0] || null)}
+              required={required}
+            />
+          </label>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function AdminProductAdd() {
-  // 🌱 상품의 정보를 정성껏 담아둘 바구니들입니다.
+  const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
+  const [customCategory, setCustomCategory] = useState('');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
+  const [status, setStatus] = useState('ON_SALE');
   const [description, setDescription] = useState('');
-  const [imageFile, setImageFile] = useState(null);
-  const navigate = useNavigate();
 
-  // 📸 파일 첨부 버튼을 눌렀을 때 실행되는 함수
-  const handleImageChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setImageFile(e.target.files[0]);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState(null);
+  const [detailFile, setDetailFile] = useState(null);
+  const [detailPreview, setDetailPreview] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setIsAdmin(false);
+      return;
     }
+
+    axios.get('http://localhost:8080/api/members/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((response) => {
+        setIsAdmin(response.data.role === 'ROLE_ADMIN');
+      })
+      .catch(() => setIsAdmin(false));
+  }, []);
+
+  const handleThumbnailChange = (file) => {
+    setThumbnailFile(file);
+    setThumbnailPreview(file ? URL.createObjectURL(file) : null);
   };
 
-  // 💌 '등록하기' 버튼을 누르면 백엔드로 마음을 전송합니다.
+  const handleDetailChange = (file) => {
+    setDetailFile(file);
+    setDetailPreview(file ? URL.createObjectURL(file) : null);
+  };
+
+  const resolvedCategory = category === '기타' ? customCategory.trim() : category;
+
   const handleSubmit = async (e) => {
-    e.preventDefault(); 
+    e.preventDefault();
+
+    if (!thumbnailFile) {
+      alert('상품 목록용 썸네일 이미지를 등록해 주세요.');
+      return;
+    }
+
+    if (!resolvedCategory) {
+      alert('카테고리를 선택하거나 입력해 주세요.');
+      return;
+    }
+
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      navigate('/login');
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
-      let thumbnailUrl = '';
-      
-      // 💡 [1번] 브라우저 주머니에서 신분증을 꺼냅니다. 
-      // (주의: 로그인하실 때 localStorage에 저장한 이름이 'accessToken'인지 꼭 확인해 주세요!)
-      const token = localStorage.getItem('accessToken'); 
+      const thumbnailUrl = await uploadImage(thumbnailFile, token);
+      let detailImageUrl = '';
 
-      // 📸 사진 먼저 업로드
-      if (imageFile) {
-        const formData = new FormData();
-        formData.append('file', imageFile);
-
-        // 💡 [2번] 사진 보낼 때 신분증(Authorization)을 봉투에 같이 담아서 보냅니다!
-        const imageResponse = await axios.post('http://localhost:8080/api/admin/upload', formData, {
-          headers: { 
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${token}` // 👈 방금 사진에서 빠져있던 주인공입니다!
-          }
-        });
-        console.log("📸 백엔드가 돌려준 사진 영수증:", imageResponse.data);
-
-        thumbnailUrl = imageResponse.data; 
+      if (detailFile) {
+        detailImageUrl = await uploadImage(detailFile, token);
       }
 
       const productData = {
-        name: name,
-        price: parseInt(price),
-        stock: parseInt(stock),
-        description: description,
-        thumbnailUrl: thumbnailUrl,
-        status: 'ON_SALE'
+        name: name.trim(),
+        price: parseInt(price, 10),
+        stock: parseInt(stock, 10),
+        description: description.trim(),
+        category: resolvedCategory,
+        status,
+        thumbnailUrl,
+        detailImageUrl,
       };
 
-      // 💡 [3번] 최종 상품 글을 올릴 때도 신분증을 꼭 다시 보여줍니다!
       await axios.post('http://localhost:8080/api/admin/products', productData, {
-        headers: {
-          'Authorization': `Bearer ${token}` // 👈 여기도 잊지 말고 챙겨주세요!
-        }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
-      alert('우리의 정성이 담긴 상품이 세상에 무사히 피어났습니다! 🌱');
-      navigate('/products'); // 상품 목록 페이지로 이동
 
+      alert('상품이 성공적으로 등록되었습니다! 🌱');
+      navigate('/products');
     } catch (error) {
-      console.error('전달 과정에서 아쉬운 오류가 발생했습니다.', error);
+      console.error('상품 등록 오류:', error);
+      if (error.response?.status === 403) {
+        alert('관리자만 상품을 등록할 수 있습니다.');
+      } else {
+        alert('상품 등록 중 오류가 발생했습니다. 다시 시도해 주세요.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  if (isAdmin === null) {
+    return <div className="admin-loading">권한을 확인하는 중입니다...</div>;
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="admin-form-container">
+        <div className="form-header">
+          <h2>접근 권한이 없습니다</h2>
+          <p>상품 등록은 관리자 계정으로 로그인한 경우에만 가능합니다.</p>
+          <button type="button" className="btn-submit-nature" onClick={() => navigate('/login')}>
+            로그인하기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="admin-form-container">
+    <div className="admin-form-container admin-form-wide">
       <div className="form-header">
-        <h2>결이든 나눔의 씨앗 심기 🌿</h2>
-        <p>우리 가족과 이웃에게 전할 건강하고 바른 상품의 이야기를 적어주세요.</p>
+        <h2>상품 등록 🌿</h2>
+        <p>쇼핑몰에 노출될 상품 정보를 입력해 주세요.</p>
       </div>
 
       <form className="admin-form" onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>따뜻한 이름</label>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="예) 마음을 다독이는 이끼 테라리움" required />
-        </div>
+        <section className="form-section">
+          <h3 className="section-title">기본 정보</h3>
 
-        <div className="form-group-row">
           <div className="form-group">
-            <label>나눔 금액 (원)</label>
-            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" required />
+            <label>상품명 *</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="예) 유기농 곡물 세트"
+              required
+            />
           </div>
-          <div className="form-group">
-            <label>준비된 수량 (개)</label>
-            <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="0" required />
+
+          <div className="form-group-row">
+            <div className="form-group">
+              <label>카테고리 *</label>
+              <select value={category} onChange={(e) => setCategory(e.target.value)} required>
+                <option value="">카테고리 선택</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            {category === '기타' && (
+              <div className="form-group">
+                <label>직접 입력 *</label>
+                <input
+                  type="text"
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                  placeholder="카테고리명 입력"
+                  required
+                />
+              </div>
+            )}
           </div>
-        </div>
 
-        <div className="form-group">
-          <label>자연을 닮은 사진</label>
-          <input type="file" accept="image/*" onChange={handleImageChange} className="file-input" required />
-        </div>
+          <div className="form-group-row">
+            <div className="form-group">
+              <label>판매가 (원) *</label>
+              <input
+                type="number"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="0"
+                min="0"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>재고 수량 (개) *</label>
+              <input
+                type="number"
+                value={stock}
+                onChange={(e) => setStock(e.target.value)}
+                placeholder="0"
+                min="0"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>판매 상태 *</label>
+              <select value={status} onChange={(e) => setStatus(e.target.value)} required>
+                {STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </section>
 
-        <div className="form-group">
-          <label>상품에 담긴 이야기</label>
-          <textarea 
-            value={description} 
-            onChange={(e) => setDescription(e.target.value)} 
-            placeholder="이 상품이 어떤 선한 영향력을 품고 있는지 정성스레 적어주세요..." 
-            rows="5" 
-            required 
+        <section className="form-section">
+          <h3 className="section-title">이미지</h3>
+
+          <ImageUploadField
+            label="썸네일 이미지 *"
+            hint="상품 목록에 노출되는 대표 이미지입니다. 정사각형(1:1) 비율을 권장합니다."
+            file={thumbnailFile}
+            preview={thumbnailPreview}
+            onChange={handleThumbnailChange}
+            required
           />
-        </div>
 
-        <button type="submit" className="btn-submit-nature">세상에 온기 전하기</button>
+          <ImageUploadField
+            label="상세 소개 이미지"
+            hint="상품 상세 페이지에서 물건을 소개하는 용도의 이미지입니다. (선택)"
+            file={detailFile}
+            preview={detailPreview}
+            onChange={handleDetailChange}
+          />
+        </section>
+
+        <section className="form-section">
+          <h3 className="section-title">상품 설명</h3>
+
+          <div className="form-group">
+            <label>상세 설명 *</label>
+            <p className="field-hint">
+              원재료, 사용법, 보관 방법, 배송 안내 등 고객이 궁금해할 내용을 자세히 작성해 주세요.
+            </p>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={`예)\n[상품 소개]\n자연 그대로의 맛을 담은 유기농 곡물 세트입니다.\n\n[원재료 및 함량]\n현미, 귀리, 렌틸콩\n\n[보관 방법]\n직사광선을 피해 서늘하고 건조한 곳에 보관해 주세요.\n\n[배송 안내]\n결제 완료 후 1~2일 내 출고됩니다.`}
+              rows="14"
+              required
+            />
+            <span className="char-count">{description.length}자</span>
+          </div>
+        </section>
+
+        <button type="submit" className="btn-submit-nature" disabled={isSubmitting}>
+          {isSubmitting ? '등록 중...' : '상품 등록하기'}
+        </button>
       </form>
     </div>
   );
