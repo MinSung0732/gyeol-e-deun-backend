@@ -41,6 +41,14 @@ function Header() {
   }, [location.pathname]); // 페이지가 바뀔 때마다 로그인 상태를 다시 확인합니다.
 
   // 3. 🏃‍♂️ 로그아웃 버튼을 눌렀을 때 실행될 함수
+  const goToAbout = () => {
+    if (location.pathname === '/') {
+      document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      navigate('/#about');
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('accessToken'); // 주머니에서 팔찌를 버립니다.
     setIsLoggedIn(false);
@@ -51,12 +59,16 @@ function Header() {
 
   return (
     <header className="main-header">
-      {/* 쇼핑몰 로고 구역 (왼쪽) */}
+      <div className="header-inner">
       <div className="logo-area" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
         <h1>결이든 🌱</h1>
       </div>
 
-      {/* 💡 대표님이 말씀하신 상단 우측 작은 메뉴 구역 */}
+      <nav className="header-nav">
+        <button className="btn-text-link" onClick={() => navigate('/products')}>상품</button>
+        <button className="btn-text-link" onClick={goToAbout}>회사 소개</button>
+      </nav>
+
       <div className="top-nav-right">
         {isLoggedIn ? (
           /* 🔒 로그인 성공 시 보이는 화면 */
@@ -65,6 +77,8 @@ function Header() {
               <strong>{userName}</strong>님 결이든에 오신 것을 환영합니다 🌿
             </span>
             <button className="btn-text-link" onClick={() => navigate('/mypage')}>마이페이지</button>
+            <span className="divider">|</span>
+            <button className="btn-text-link" onClick={() => navigate('/cart')}>장바구니</button>
             <span className="divider">|</span>
             <button className="btn-text-link" onClick={handleLogout}>로그아웃</button>
           </div>
@@ -77,6 +91,7 @@ function Header() {
             <button className="btn-text-link" onClick={() => navigate('/signup')}>회원가입</button>
           </div>
         )}
+      </div>
       </div>
     </header>
   );

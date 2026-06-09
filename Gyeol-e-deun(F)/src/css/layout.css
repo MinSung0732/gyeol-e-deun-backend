@@ -1,0 +1,49 @@
+/* ── 앱 셸 ── */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #FDFBF7;
+}
+
+.app-main {
+  flex: 1;
+  width: 100%;
+}
+
+/* ── 풀위드 레이아웃 (메인, 회사 소개 등) ── */
+.layout-full-page {
+  width: 100%;
+}
+
+/* ── 박스드 레이아웃 (상품, 마이페이지 등) max 1440px ── */
+.layout-boxed-page {
+  width: 100%;
+  flex: 1;
+}
+
+.layout-boxed-inner {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.layout-boxed-page--centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 65px);
+}
+
+.layout-boxed-page--centered .layout-boxed-inner {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .layout-boxed-inner {
+    padding: 28px 16px;
+  }
+}

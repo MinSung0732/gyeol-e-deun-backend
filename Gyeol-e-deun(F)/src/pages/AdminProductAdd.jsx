@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import '../css/index.css';
 import '../css/admin.css';
+import BoxedLayout from '../components/layout/BoxedLayout';
 
 const CATEGORIES = [
   '건강식품',
@@ -236,11 +237,16 @@ function AdminProductAdd() {
   };
 
   if (isAdmin === null) {
-    return <div className="admin-loading">권한을 확인하는 중입니다...</div>;
+    return (
+      <BoxedLayout>
+        <div className="admin-loading">권한을 확인하는 중입니다...</div>
+      </BoxedLayout>
+    );
   }
 
   if (!isAdmin) {
     return (
+      <BoxedLayout>
       <div className="admin-form-container">
         <div className="form-header">
           <h2>접근 권한이 없습니다</h2>
@@ -250,10 +256,12 @@ function AdminProductAdd() {
           </button>
         </div>
       </div>
+      </BoxedLayout>
     );
   }
 
   return (
+    <BoxedLayout>
     <div className="admin-form-container admin-form-wide">
       <div className="form-header">
         <h2>상품 등록 🌿</h2>
@@ -375,6 +383,7 @@ function AdminProductAdd() {
         </button>
       </form>
     </div>
+    </BoxedLayout>
   );
 }
 

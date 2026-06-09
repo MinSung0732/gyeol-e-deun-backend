@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import DaumPostcode from 'react-daum-postcode'; // 🏡 주소 API 가져오기
 import '../css/index.css'; // 디자인 통일을 위해 가져오기
-import '../css/auth.css'; // 회원가입 페이지 전용 스타일
+import '../css/auth.css';
+import BoxedLayout from '../components/layout/BoxedLayout';
 
 function Signup() {
   // --- [상태 정의: 바구니들] ---
@@ -296,7 +297,7 @@ function Signup() {
   };
 
   return (
-    <div className="signup-container">
+    <BoxedLayout className="auth-page">
       <div className="signup-box">
         <h2>마음을 나누는 첫걸음 싹틔우기 🌱</h2>
         <p className="subtitle">결이든과 함께 따뜻한 여정을 시작해 주세요.</p>
@@ -457,7 +458,7 @@ function Signup() {
           </button>
         </form>
       </div>
-    </div>
+    </BoxedLayout>
   );
 }
 

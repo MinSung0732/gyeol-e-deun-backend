@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../css/index.css'; // 디자인 통일을 위해 가져오기
-import '../css/auth.css'; // 로그인 페이지 전용 스타일
+import '../css/auth.css';
+import BoxedLayout from '../components/layout/BoxedLayout';
 
 function Login() {
   const navigate = useNavigate();
@@ -44,7 +45,7 @@ function Login() {
   };
 
   return (
-    <div className="signup-container">
+    <BoxedLayout className="layout-boxed-page--centered">
       <div className="signup-box">
         <h2>결이든 로그인 🌱</h2>
         <p className="subtitle">따뜻한 나눔의 공간으로 들어오세요.</p>
@@ -88,7 +89,7 @@ function Login() {
 
         </form>
       </div>
-    </div>
+    </BoxedLayout>
   );
 }
 

@@ -6,7 +6,6 @@ import com.example.minsung.demo.dto.memberDto.MemberMeResponseDto;
 import com.example.minsung.demo.dto.memberDto.MemberRegisterRequestDto;
 import com.example.minsung.demo.entity.Member;
 import com.example.minsung.demo.service.memberService.MemberService;
-import com.example.minsung.demo.util.JwtUtil;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,9 +18,6 @@ public class MemberController {
 
     @Autowired
     private MemberService memberService;
-
-    @Autowired
-    private JwtUtil jwtUtil;
 
     // 회원가입 요청 접수 (POST)
     @PostMapping("/register")
@@ -65,19 +61,27 @@ public class MemberController {
         }
     }
 
-    // 💡 [내 정보 가져오기] 프론트엔드가 토큰을 보여주면 이름을 반환합니다.
+    // 💡 [내 정보 가져오기] SecurityContextHolder를 사용하여 현재 로그인된 유저 정보를 반환합니다.
     @GetMapping("/me")
-    public ResponseEntity<?> getMyName(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> getMyName() {
         try {
-            // 1. 프론트엔드는 보통 "Bearer 외계어토큰..." 형태로 보냅니다. 앞의 "Bearer " 글자를 떼어냅니다.
-            String jwt = token.replace("Bearer ", "");
+            // 1. SecurityContextHolder에서 현재 인증된 사용자의 정보를 가져옵니다.
+            org.springframework.security.core.Authentication authentication = 
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
             
-            // 2. 토큰을 해독해서 안에 들어있는 로그인 아이디(loginId)를 꺼냅니다.
-            // (주의: JwtUtil에 만들어두신 해독 메서드 이름에 맞게 수정해주세요! 예: getLoginId, extractUsername 등)
-            String loginId = jwtUtil.getLoginIdFromToken(jwt); 
+            if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증되지 않은 사용자입니다.");
+            }
+
+            // 2. 인증 객체에서 로그인 아이디(username)를 꺼냅니다. (JwtFilter에서 설정한 값)
+            String loginId = authentication.getName(); 
             
             // 3. 창고에서 그 아이디를 가진 회원을 찾습니다.
             Member member = memberService.findByLoginId(loginId);
+            
+            if (member == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("회원 정보를 찾을 수 없습니다.");
+            }
             
             return ResponseEntity.ok(new MemberMeResponseDto(
                 member.getName(),
@@ -86,8 +90,7 @@ public class MemberController {
             ));
             
         } catch (Exception e) {
-            // 토큰이 위조되었거나, 1시간이 지나서 만료되었다면 401(인증 실패) 에러를 던집니다.
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않거나 만료된 토큰입니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("사용자 정보를 가져오는 중 오류가 발생했습니다.");
         }
     }
 }

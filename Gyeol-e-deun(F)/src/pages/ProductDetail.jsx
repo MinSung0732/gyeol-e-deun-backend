@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ImageCarousel from '../components/ImageCarousel';
 import { getThumbnailUrls } from '../utils/productImages';
+import BoxedLayout from '../components/layout/BoxedLayout';
 import '../css/main.css';
 
 const STATUS_LABEL = {
@@ -27,10 +28,12 @@ function ProductDetail() {
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [error, setError] = useState(null);
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     setProduct(null);
     setError(null);
+    setQuantity(1);
 
     axios.get(`http://localhost:8080/api/products/${id}`)
       .then((response) => {
@@ -44,24 +47,86 @@ function ProductDetail() {
 
   if (error) {
     return (
-      <main className="main-container detail-page">
-        <p className="detail-error">{error}</p>
-        <button className="btn-back" onClick={() => navigate('/products')}>
-          ← 상품 목록으로
-        </button>
-      </main>
+      <BoxedLayout>
+        <main className="main-container detail-page">
+          <p className="detail-error">{error}</p>
+          <button className="btn-back" onClick={() => navigate('/products')}>
+            ← 상품 목록으로
+          </button>
+        </main>
+      </BoxedLayout>
     );
   }
 
   if (!product) {
-    return <div className="loading-text">나눔의 숨결을 들이고 있습니다... 🌱</div>;
+    return (
+      <BoxedLayout>
+        <div className="loading-text">나눔의 숨결을 들이고 있습니다... 🌱</div>
+      </BoxedLayout>
+    );
   }
 
   const statusLabel = STATUS_LABEL[product.status] || product.status;
   const isSoldOut = product.status === 'SOLD_OUT';
   const thumbnailImages = getThumbnailUrls(product);
 
+  const handleIncrease = () => {
+    if (quantity < product.stock) {
+      setQuantity((prev) => prev + 1);
+    }
+  };
+
+  const handleDecrease = () => {
+    if (quantity > 1) {
+      setQuantity((prev) => prev - 1);
+    }
+  };
+
+  const handleAddToCart = () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      navigate('/login');
+      return;
+    }
+
+    if (quantity > product.stock) {
+      alert(`재고가 부족합니다. (현재 재고: ${product.stock}개)`);
+      return;
+    }
+
+    axios.post(
+      'http://localhost:8080/api/cart',
+      {
+        productId: product.productId,
+        count: quantity,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then((response) => {
+      alert(response.data || '장바구니에 상품을 안전하게 담았습니다.');
+      // Optional: Ask user if they want to go to cart page
+      if (window.confirm('장바구니로 이동하시겠습니까?')) {
+        navigate('/cart');
+      }
+    })
+    .catch((err) => {
+      console.error('장바구니 담기 오류:', err);
+      if (err.response?.status === 401) {
+        alert('로그인이 필요합니다.');
+        navigate('/login');
+      } else {
+        alert(typeof err.response?.data === 'string' ? err.response.data : '장바구니 담기에 실패했습니다.');
+      }
+    });
+  };
+
   return (
+    <BoxedLayout>
     <main className="main-container detail-page">
       <button className="btn-back" onClick={() => navigate('/products')}>
         ← 상품 목록으로
@@ -140,15 +205,26 @@ function ProductDetail() {
             </dl>
           </section>
 
+          {!isSoldOut && product.stock > 0 && (
+            <div className="detail-quantity-box" style={{ display: 'flex', alignItems: 'center', marginBottom: '20px', gap: '10px' }}>
+              <span style={{ fontWeight: 'bold' }}>수량:</span>
+              <button onClick={handleDecrease} disabled={quantity <= 1} style={{ padding: '5px 10px', fontSize: '16px', border: '1px solid #ccc', borderRadius: '4px', background: '#fff', cursor: 'pointer' }}>-</button>
+              <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '16px' }}>{quantity}</span>
+              <button onClick={handleIncrease} disabled={quantity >= product.stock} style={{ padding: '5px 10px', fontSize: '16px', border: '1px solid #ccc', borderRadius: '4px', background: '#fff', cursor: 'pointer' }}>+</button>
+            </div>
+          )}
+
           <button
             className="btn-large-cart"
             disabled={isSoldOut || product.stock <= 0}
+            onClick={handleAddToCart}
           >
             {isSoldOut || product.stock <= 0 ? '품절된 물품입니다' : '바구니에 담기 🌿'}
           </button>
         </div>
       </div>
     </main>
+    </BoxedLayout>
   );
 }
 

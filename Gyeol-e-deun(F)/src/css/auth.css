@@ -1,9 +1,8 @@
-.signup-container {
+.auth-page .layout-boxed-inner {
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background-color: #FDFBF7;
+  padding-top: 48px;
+  padding-bottom: 64px;
 }
 
 .signup-box {
