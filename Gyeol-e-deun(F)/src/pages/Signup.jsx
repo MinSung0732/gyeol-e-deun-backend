@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import DaumPostcode from 'react-daum-postcode'; // 🏡 주소 API 가져오기
-import '../css/index.css'; // 디자인 통일을 위해 가져오기
+import DaumPostcode from 'react-daum-postcode';
+import { apiClient, api } from '../utils/api';
 import '../css/auth.css';
-import BoxedLayout from '../components/layout/BoxedLayout';
 
 function Signup() {
   // --- [상태 정의: 바구니들] ---
   const [loginId, setLoginId] = useState('');
-  const [idChecked, setIdChecked] = useState(false); // 아이디 중복확인 여부
+  const [idChecked, setIdChecked] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setIdChecked(false);
+  }, [loginId]);
   
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
@@ -121,14 +123,8 @@ function Signup() {
       return; // 여기서 함수를 멈추고 서버로 보내지 않습니다!
     }
 
-    try {
-      // (기존 백엔드 중복 확인 Axios 코드)
-      // await axios.get(...)
-      alert('사용 가능한 아이디입니다! 🌱');
-      setIdChecked(true);
-    } catch (error) {
-      alert('이미 존재하는 아이디입니다.');
-    }
+    alert('사용 가능한 형식의 아이디입니다. (서버 중복 확인 API 연동 전)');
+    setIdChecked(true);
   };
   
 
@@ -146,7 +142,7 @@ function Signup() {
     }
     try {
       // 🚚 어제 테스트했던 백엔드 이메일 발송 주소로 post 요청
-      await axios.post('http://localhost:8080/api/auth/email/send', { email: fullEmail });
+      await apiClient.post('/api/auth/email/send', { email: fullEmail });
       alert('인증번호가 발송되었습니다. 메일함을 확인해주세요! 📩');
       setIsEmailSent(true);
       setIsTimerActive(true); // 타이머 시작
@@ -168,7 +164,7 @@ function Signup() {
 
     try {
       // 💡 주석을 풀고 백엔드(8080)로 사용자가 입력한 코드를 진짜로 보냅니다!
-      await axios.post('http://localhost:8080/api/auth/email/verify', { 
+      await apiClient.post('/api/auth/email/verify', { 
         email: fullEmail, 
         code: verificationCode 
       });
@@ -262,7 +258,7 @@ function Signup() {
       const fullEmail = getFullEmail();
       
       // 🚚 백엔드가 기다리는 정확한 이름표로 데이터를 예쁘게 포장합니다.
-      await axios.post('http://localhost:8080/api/members/register', {
+      await apiClient.post(api.members.register, {
         loginId: loginId,
         password: password,
         name: name,
@@ -297,7 +293,7 @@ function Signup() {
   };
 
   return (
-    <BoxedLayout className="auth-page">
+    <div className="auth-page-wrap">
       <div className="signup-box">
         <h2>마음을 나누는 첫걸음 싹틔우기 🌱</h2>
         <p className="subtitle">결이든과 함께 따뜻한 여정을 시작해 주세요.</p>
@@ -458,7 +454,7 @@ function Signup() {
           </button>
         </form>
       </div>
-    </BoxedLayout>
+    </div>
   );
 }
 

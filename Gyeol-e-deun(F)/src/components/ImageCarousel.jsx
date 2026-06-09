@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react';
+import { IMAGE_PLACEHOLDER } from '../utils/productImages';
 
-const PLACEHOLDER = 'https://placehold.co/500x500?text=Gyeol-E-Deun';
 const MAX_IMAGES = 5;
 
 function ImageCarousel({ images = [], alt = '상품 이미지', badge = null }) {
-  const slides = images.length > 0 ? images.slice(0, MAX_IMAGES) : [PLACEHOLDER];
+  const slides = images.length > 0 ? images.slice(0, MAX_IMAGES) : [IMAGE_PLACEHOLDER.large];
   const [currentIndex, setCurrentIndex] = useState(0);
   const hasMultiple = slides.length > 1;
 
@@ -17,9 +17,6 @@ function ImageCarousel({ images = [], alt = '상품 이미지', badge = null }) 
       setCurrentIndex(index);
     }
   }, [slides.length]);
-
-  const goPrev = () => goTo(currentIndex - 1);
-  const goNext = () => goTo(currentIndex + 1);
 
   return (
     <div className="image-carousel">
@@ -42,7 +39,7 @@ function ImageCarousel({ images = [], alt = '상품 이미지', badge = null }) 
             <button
               type="button"
               className="carousel-arrow carousel-arrow-prev"
-              onClick={goPrev}
+              onClick={() => goTo(currentIndex - 1)}
               aria-label="이전 이미지"
             >
               ‹
@@ -50,7 +47,7 @@ function ImageCarousel({ images = [], alt = '상품 이미지', badge = null }) 
             <button
               type="button"
               className="carousel-arrow carousel-arrow-next"
-              onClick={goNext}
+              onClick={() => goTo(currentIndex + 1)}
               aria-label="다음 이미지"
             >
               ›

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { apiClient, api, getAccessToken } from '../utils/api';
+import { addToCart } from '../utils/cart';
 import ImageCarousel from '../components/ImageCarousel';
 import { getThumbnailUrls } from '../utils/productImages';
-import BoxedLayout from '../components/layout/BoxedLayout';
 import '../css/main.css';
 
 const STATUS_LABEL = {
@@ -35,10 +35,8 @@ function ProductDetail() {
     setError(null);
     setQuantity(1);
 
-    axios.get(`http://localhost:8080/api/products/${id}`)
-      .then((response) => {
-        setProduct(response.data);
-      })
+    apiClient.get(api.products.detail(id))
+      .then((response) => setProduct(response.data))
       .catch((err) => {
         console.error('물품 정보를 가져오지 못했습니다:', err);
         setError('상품 정보를 불러오지 못했습니다.');
@@ -47,43 +45,25 @@ function ProductDetail() {
 
   if (error) {
     return (
-      <BoxedLayout>
-        <main className="main-container detail-page">
-          <p className="detail-error">{error}</p>
-          <button className="btn-back" onClick={() => navigate('/products')}>
-            ← 상품 목록으로
-          </button>
-        </main>
-      </BoxedLayout>
+      <main className="main-container detail-page">
+        <p className="detail-error">{error}</p>
+        <button type="button" className="btn-back" onClick={() => navigate('/products')}>
+          ← 상품 목록으로
+        </button>
+      </main>
     );
   }
 
   if (!product) {
-    return (
-      <BoxedLayout>
-        <div className="loading-text">나눔의 숨결을 들이고 있습니다... 🌱</div>
-      </BoxedLayout>
-    );
+    return <div className="loading-text">나눔의 숨결을 들이고 있습니다... 🌱</div>;
   }
 
   const statusLabel = STATUS_LABEL[product.status] || product.status;
   const isSoldOut = product.status === 'SOLD_OUT';
   const thumbnailImages = getThumbnailUrls(product);
 
-  const handleIncrease = () => {
-    if (quantity < product.stock) {
-      setQuantity((prev) => prev + 1);
-    }
-  };
-
-  const handleDecrease = () => {
-    if (quantity > 1) {
-      setQuantity((prev) => prev - 1);
-    }
-  };
-
-  const handleAddToCart = () => {
-    const token = localStorage.getItem('accessToken');
+  const handleAddToCart = async () => {
+    const token = getAccessToken();
     if (!token) {
       alert('로그인이 필요합니다.');
       navigate('/login');
@@ -95,26 +75,13 @@ function ProductDetail() {
       return;
     }
 
-    axios.post(
-      'http://localhost:8080/api/cart',
-      {
-        productId: product.productId,
-        count: quantity,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    )
-    .then((response) => {
-      alert(response.data || '장바구니에 상품을 안전하게 담았습니다.');
-      // Optional: Ask user if they want to go to cart page
+    try {
+      const message = await addToCart({ productId: product.productId, count: quantity }, token);
+      alert(message || '장바구니에 상품을 안전하게 담았습니다.');
       if (window.confirm('장바구니로 이동하시겠습니까?')) {
         navigate('/cart');
       }
-    })
-    .catch((err) => {
+    } catch (err) {
       console.error('장바구니 담기 오류:', err);
       if (err.response?.status === 401) {
         alert('로그인이 필요합니다.');
@@ -122,13 +89,12 @@ function ProductDetail() {
       } else {
         alert(typeof err.response?.data === 'string' ? err.response.data : '장바구니 담기에 실패했습니다.');
       }
-    });
+    }
   };
 
   return (
-    <BoxedLayout>
     <main className="main-container detail-page">
-      <button className="btn-back" onClick={() => navigate('/products')}>
+      <button type="button" className="btn-back" onClick={() => navigate('/products')}>
         ← 상품 목록으로
       </button>
 
@@ -138,9 +104,7 @@ function ProductDetail() {
             key={product.productId}
             images={thumbnailImages}
             alt={product.name}
-            badge={isSoldOut ? (
-              <span className="badge sold-out detail-badge">품절</span>
-            ) : null}
+            badge={isSoldOut ? <span className="badge sold-out detail-badge">품절</span> : null}
           />
 
           {product.detailImageUrl && (
@@ -151,19 +115,12 @@ function ProductDetail() {
         </div>
 
         <div className="detail-info-box">
-          {product.category && (
-            <span className="detail-category">{product.category}</span>
-          )}
-
+          {product.category && <span className="detail-category">{product.category}</span>}
           <h2 className="detail-name">{product.name}</h2>
 
           <div className="detail-meta-row">
-            <span className={`detail-status status-${product.status?.toLowerCase()}`}>
-              {statusLabel}
-            </span>
-            <span className="detail-stock">
-              재고 {product.stock?.toLocaleString() ?? 0}개
-            </span>
+            <span className={`detail-status status-${product.status?.toLowerCase()}`}>{statusLabel}</span>
+            <span className="detail-stock">재고 {product.stock?.toLocaleString() ?? 0}개</span>
           </div>
 
           <div className="detail-price-box">
@@ -178,43 +135,26 @@ function ProductDetail() {
           <section className="detail-section detail-info-table">
             <h3>상품 정보</h3>
             <dl>
-              <div className="detail-info-row">
-                <dt>상품번호</dt>
-                <dd>{product.productId}</dd>
-              </div>
-              <div className="detail-info-row">
-                <dt>카테고리</dt>
-                <dd>{product.category || '-'}</dd>
-              </div>
-              <div className="detail-info-row">
-                <dt>판매 상태</dt>
-                <dd>{statusLabel}</dd>
-              </div>
-              <div className="detail-info-row">
-                <dt>재고</dt>
-                <dd>{product.stock?.toLocaleString() ?? 0}개</dd>
-              </div>
-              <div className="detail-info-row">
-                <dt>등록일</dt>
-                <dd>{formatDate(product.createdAt)}</dd>
-              </div>
-              <div className="detail-info-row">
-                <dt>최종 수정일</dt>
-                <dd>{formatDate(product.updatedAt)}</dd>
-              </div>
+              <div className="detail-info-row"><dt>상품번호</dt><dd>{product.productId}</dd></div>
+              <div className="detail-info-row"><dt>카테고리</dt><dd>{product.category || '-'}</dd></div>
+              <div className="detail-info-row"><dt>판매 상태</dt><dd>{statusLabel}</dd></div>
+              <div className="detail-info-row"><dt>재고</dt><dd>{product.stock?.toLocaleString() ?? 0}개</dd></div>
+              <div className="detail-info-row"><dt>등록일</dt><dd>{formatDate(product.createdAt)}</dd></div>
+              <div className="detail-info-row"><dt>최종 수정일</dt><dd>{formatDate(product.updatedAt)}</dd></div>
             </dl>
           </section>
 
           {!isSoldOut && product.stock > 0 && (
-            <div className="detail-quantity-box" style={{ display: 'flex', alignItems: 'center', marginBottom: '20px', gap: '10px' }}>
-              <span style={{ fontWeight: 'bold' }}>수량:</span>
-              <button onClick={handleDecrease} disabled={quantity <= 1} style={{ padding: '5px 10px', fontSize: '16px', border: '1px solid #ccc', borderRadius: '4px', background: '#fff', cursor: 'pointer' }}>-</button>
-              <span style={{ minWidth: '30px', textAlign: 'center', fontSize: '16px' }}>{quantity}</span>
-              <button onClick={handleIncrease} disabled={quantity >= product.stock} style={{ padding: '5px 10px', fontSize: '16px', border: '1px solid #ccc', borderRadius: '4px', background: '#fff', cursor: 'pointer' }}>+</button>
+            <div className="detail-quantity-box">
+              <span className="detail-quantity-label">수량:</span>
+              <button type="button" onClick={() => setQuantity((prev) => Math.max(1, prev - 1))} disabled={quantity <= 1}>-</button>
+              <span className="detail-quantity-value">{quantity}</span>
+              <button type="button" onClick={() => setQuantity((prev) => Math.min(product.stock, prev + 1))} disabled={quantity >= product.stock}>+</button>
             </div>
           )}
 
           <button
+            type="button"
             className="btn-large-cart"
             disabled={isSoldOut || product.stock <= 0}
             onClick={handleAddToCart}
@@ -224,7 +164,6 @@ function ProductDetail() {
         </div>
       </div>
     </main>
-    </BoxedLayout>
   );
 }
 

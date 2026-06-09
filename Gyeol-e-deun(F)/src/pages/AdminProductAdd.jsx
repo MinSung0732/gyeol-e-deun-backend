@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import '../css/index.css';
+import { apiClient, api, authHeaders, getAccessToken } from '../utils/api';
 import '../css/admin.css';
-import BoxedLayout from '../components/layout/BoxedLayout';
 
 const CATEGORIES = [
   '건강식품',
@@ -24,10 +22,10 @@ async function uploadImage(file, token) {
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await axios.post('http://localhost:8080/api/admin/upload', formData, {
+  const response = await apiClient.post(api.admin.upload, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
-      Authorization: `Bearer ${token}`,
+      ...authHeaders(token),
     },
   });
   return response.data;
@@ -81,7 +79,7 @@ function ThumbnailGalleryUpload({ items, onAdd, onRemove }) {
   );
 }
 
-function ImageUploadField({ label, hint, file, preview, onChange, required }) {
+function ImageUploadField({ label, hint, preview, onChange, required }) {
   return (
     <div className="form-group image-upload-group">
       <label>{label}</label>
@@ -132,15 +130,13 @@ function AdminProductAdd() {
   const [detailPreview, setDetailPreview] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
+    const token = getAccessToken();
     if (!token) {
       setIsAdmin(false);
       return;
     }
 
-    axios.get('http://localhost:8080/api/members/me', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    apiClient.get(api.members.me, { headers: authHeaders(token) })
       .then((response) => {
         setIsAdmin(response.data.role === 'ROLE_ADMIN');
       })
@@ -185,7 +181,7 @@ function AdminProductAdd() {
       return;
     }
 
-    const token = localStorage.getItem('accessToken');
+    const token = getAccessToken();
     if (!token) {
       alert('로그인이 필요합니다.');
       navigate('/login');
@@ -218,8 +214,8 @@ function AdminProductAdd() {
         detailImageUrl,
       };
 
-      await axios.post('http://localhost:8080/api/admin/products', productData, {
-        headers: { Authorization: `Bearer ${token}` },
+      await apiClient.post(api.admin.products, productData, {
+        headers: authHeaders(token),
       });
 
       alert('상품이 성공적으로 등록되었습니다! 🌱');
@@ -237,16 +233,11 @@ function AdminProductAdd() {
   };
 
   if (isAdmin === null) {
-    return (
-      <BoxedLayout>
-        <div className="admin-loading">권한을 확인하는 중입니다...</div>
-      </BoxedLayout>
-    );
+    return <div className="admin-loading">권한을 확인하는 중입니다...</div>;
   }
 
   if (!isAdmin) {
     return (
-      <BoxedLayout>
       <div className="admin-form-container">
         <div className="form-header">
           <h2>접근 권한이 없습니다</h2>
@@ -256,12 +247,10 @@ function AdminProductAdd() {
           </button>
         </div>
       </div>
-      </BoxedLayout>
     );
   }
 
   return (
-    <BoxedLayout>
     <div className="admin-form-container admin-form-wide">
       <div className="form-header">
         <h2>상품 등록 🌿</h2>
@@ -353,7 +342,6 @@ function AdminProductAdd() {
           <ImageUploadField
             label="상세 소개 이미지"
             hint="상품 상세 페이지에서 물건을 소개하는 용도의 이미지입니다. (선택)"
-            file={detailFile}
             preview={detailPreview}
             onChange={handleDetailChange}
           />
@@ -383,7 +371,6 @@ function AdminProductAdd() {
         </button>
       </form>
     </div>
-    </BoxedLayout>
   );
 }
 

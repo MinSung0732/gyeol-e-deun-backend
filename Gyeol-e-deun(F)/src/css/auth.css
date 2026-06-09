@@ -1,8 +1,26 @@
-.auth-page .layout-boxed-inner {
+.auth-page-wrap {
   display: flex;
   justify-content: center;
   padding-top: 48px;
   padding-bottom: 64px;
+}
+
+.auth-link-row {
+  text-align: center;
+  margin-top: 15px;
+  font-size: 14px;
+  color: #7A8B7D;
+}
+
+.auth-link {
+  font-weight: bold;
+  margin-left: 5px;
+  cursor: pointer;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: inherit;
 }
 
 .signup-box {

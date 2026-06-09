@@ -35,7 +35,6 @@ public class MemberService {
         // 2. [알맹이 포장] 검증을 통과했다면 실제 DB에 넣을 빈 Member 객체를 만듭니다.
         Member member = new Member();
         member.setLoginId(dto.getLoginId());
-        member.setPassword(dto.getPassword());
         member.setEmail(dto.getEmail());
         member.setName(dto.getName());
         member.setBirth(dto.getBirth());

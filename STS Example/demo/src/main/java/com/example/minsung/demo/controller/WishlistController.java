@@ -2,16 +2,19 @@ package com.example.minsung.demo.controller;
 
 import com.example.minsung.demo.dto.wishlistDto.WishlistItemResponseDto;
 import com.example.minsung.demo.service.wishlistService.WishlistService;
+import com.example.minsung.demo.util.SecurityUtil;
+
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/wishlist")
@@ -23,21 +26,11 @@ public class WishlistController {
     @PostMapping("/toggle/{productId}")
     public ResponseEntity<?> toggleWishlist(@PathVariable Long productId) {
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-            if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
-            }
-
-            String loginId = authentication.getName();
-            boolean isAdded = wishlistService.toggleWishlist(loginId, productId);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("isAdded", isAdded);
-            response.put("message", isAdded ? "찜 목록에 추가되었습니다." : "찜 목록에서 제거되었습니다.");
-
-            return ResponseEntity.ok(response);
-
+            boolean isAdded = wishlistService.toggleWishlist(SecurityUtil.getCurrentLoginId(), productId);
+            return ResponseEntity.ok(Map.of(
+                "isAdded", isAdded,
+                "message", isAdded ? "찜 목록에 추가되었습니다." : "찜 목록에서 제거되었습니다."
+            ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
@@ -46,22 +39,7 @@ public class WishlistController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getWishlistItems() {
-        try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-            if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
-            }
-
-            String loginId = authentication.getName();
-            List<WishlistItemResponseDto> items = wishlistService.getWishlistItems(loginId);
-            return ResponseEntity.ok(items);
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("찜 목록을 불러오는데 실패했습니다.");
-        }
+    public ResponseEntity<List<WishlistItemResponseDto>> getWishlistItems() {
+        return ResponseEntity.ok(wishlistService.getWishlistItems(SecurityUtil.getCurrentLoginId()));
     }
 }

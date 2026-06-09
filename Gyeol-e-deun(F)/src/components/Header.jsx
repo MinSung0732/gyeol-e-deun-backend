@@ -1,46 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios'; // 백엔드와 통신하기 위한 도구
-import '../css/index.css'; // 디자인 통일을 위해 가져오기
-import '../css/header.css'; // 헤더 전용 스타일
+import { apiClient, api, authHeaders, getAccessToken } from '../utils/api';
+import '../css/header.css';
 
 function Header() {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // 1. 로그인 상태와 사용자 이름을 담을 바구니
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('');
 
-  // 2. 컴포넌트가 켜질 때 주머니를 검사하고, 백엔드에 이름을 물어봅니다.
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    
-    if (token) {
-      // 주머니에 토큰이 있다면 백엔드(/me)로 요청을 보냅니다.
-      axios.get('http://localhost:8080/api/members/me', {
-        headers: {
-          // 💡 이것이 바로 웹의 약속! 신분증(토큰)을 보여줄 때는 'Bearer '를 앞에 붙입니다.
-          Authorization: `Bearer ${token}` 
-        }
-      })
+    const token = getAccessToken();
+
+    if (!token) {
+      setIsLoggedIn(false);
+      setUserName('');
+      return;
+    }
+
+    apiClient.get(api.members.me, { headers: authHeaders(token) })
       .then((response) => {
-        // 백엔드가 토큰을 인정하고 이름을 돌려준 경우!
         setIsLoggedIn(true);
         setUserName(response.data.name);
       })
-      .catch((error) => {
-        // 🚨 방금 설정한 '1시간'이 지났거나 토큰이 이상한 경우 여기서 잡힙니다.
-        console.error('토큰 만료 또는 오류:', error);
-        localStorage.removeItem('accessToken'); // 낡은 팔찌를 주머니에서 버립니다.
-        setIsLoggedIn(false); // 로그인 전 상태로 되돌립니다.
+      .catch(() => {
+        localStorage.removeItem('accessToken');
+        setIsLoggedIn(false);
+        setUserName('');
       });
-    } else {
-      setIsLoggedIn(false); // 애초에 토큰이 없으면 로그인 전 상태
-    }
-  }, [location.pathname]); // 페이지가 바뀔 때마다 로그인 상태를 다시 확인합니다.
+  }, [location.pathname]);
 
-  // 3. 🏃‍♂️ 로그아웃 버튼을 눌렀을 때 실행될 함수
   const goToAbout = () => {
     if (location.pathname === '/') {
       document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
@@ -50,48 +39,45 @@ function Header() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('accessToken'); // 주머니에서 팔찌를 버립니다.
+    localStorage.removeItem('accessToken');
     setIsLoggedIn(false);
-    alert('로그아웃되었습니다. 또 방문해 주세요! 🍂');
-    navigate('/'); // 메인 화면으로 이동
-    window.location.reload(); // 상태 반영을 위해 화면을 한 번 새로고침 해줍니다.
+    setUserName('');
+    navigate('/');
   };
 
   return (
     <header className="main-header">
       <div className="header-inner">
-      <div className="logo-area" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-        <h1>결이든 🌱</h1>
-      </div>
+        <div className="logo-area" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+          <h1>결이든 🌱</h1>
+        </div>
 
-      <nav className="header-nav">
-        <button className="btn-text-link" onClick={() => navigate('/products')}>상품</button>
-        <button className="btn-text-link" onClick={goToAbout}>회사 소개</button>
-      </nav>
+        <nav className="header-nav">
+          <button type="button" className="btn-text-link" onClick={() => navigate('/products')}>상품</button>
+          <button type="button" className="btn-text-link" onClick={goToAbout}>회사 소개</button>
+        </nav>
 
-      <div className="top-nav-right">
-        {isLoggedIn ? (
-          /* 🔒 로그인 성공 시 보이는 화면 */
-          <div className="user-menu-group">
-            <span className="welcome-text">
-              <strong>{userName}</strong>님 결이든에 오신 것을 환영합니다 🌿
-            </span>
-            <button className="btn-text-link" onClick={() => navigate('/mypage')}>마이페이지</button>
-            <span className="divider">|</span>
-            <button className="btn-text-link" onClick={() => navigate('/cart')}>장바구니</button>
-            <span className="divider">|</span>
-            <button className="btn-text-link" onClick={handleLogout}>로그아웃</button>
-          </div>
-        ) : (
-          /* 🔓 로그인 전 보이는 화면 */
-          <div className="guest-menu-group">
-            <span className="welcome-text">결이든에 오신 것을 환영합니다 🌱</span>
-            <button className="btn-text-link" onClick={() => navigate('/login')}>로그인</button>
-            <span className="divider">|</span>
-            <button className="btn-text-link" onClick={() => navigate('/signup')}>회원가입</button>
-          </div>
-        )}
-      </div>
+        <div className="top-nav-right">
+          {isLoggedIn ? (
+            <div className="user-menu-group">
+              <span className="welcome-text">
+                <strong>{userName}</strong>님 결이든에 오신 것을 환영합니다 🌿
+              </span>
+              <button type="button" className="btn-text-link" onClick={() => navigate('/mypage')}>마이페이지</button>
+              <span className="divider">|</span>
+              <button type="button" className="btn-text-link" onClick={() => navigate('/cart')}>장바구니</button>
+              <span className="divider">|</span>
+              <button type="button" className="btn-text-link" onClick={handleLogout}>로그아웃</button>
+            </div>
+          ) : (
+            <div className="guest-menu-group">
+              <span className="welcome-text">결이든에 오신 것을 환영합니다 🌱</span>
+              <button type="button" className="btn-text-link" onClick={() => navigate('/login')}>로그인</button>
+              <span className="divider">|</span>
+              <button type="button" className="btn-text-link" onClick={() => navigate('/signup')}>회원가입</button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

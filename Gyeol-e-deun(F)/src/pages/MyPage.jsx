@@ -1,78 +1,87 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import BoxedLayout from '../components/layout/BoxedLayout';
+import { apiClient, api, authHeaders, getAccessToken } from '../utils/api';
+import { IMAGE_PLACEHOLDER } from '../utils/productImages';
 import MyDashboard from '../components/MyDashboard';
 import '../css/mypage.css';
+
+function ItemList({ items, onNavigate }) {
+  return (
+    <ul className="item-list">
+      {items.map((item) => (
+        <li key={item.wishlistItemId || item.cartItemId} className="item-list-row">
+          <img
+            src={item.primaryImageUrl || IMAGE_PLACEHOLDER.thumb}
+            alt={item.productName}
+            onClick={() => onNavigate(item.productId)}
+            className="item-list-thumb"
+          />
+          <div className="item-list-body">
+            <h4 onClick={() => onNavigate(item.productId)} className="item-list-name">
+              {item.productName}
+            </h4>
+            <p className="item-list-meta">
+              {item.count
+                ? `${item.price.toLocaleString()}원 x ${item.count}개 = ${(item.price * item.count).toLocaleString()}원`
+                : `${item.price.toLocaleString()}원`}
+            </p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 function MyPage() {
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState(null);
   const [cartItems, setCartItems] = useState([]);
-  const [wishlistItems, setWishlistItems] = useState([]); // 찜 목록 상태 추가
+  const [wishlistItems, setWishlistItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('orders'); // 'orders', 'wishlist', 'cart', 'profile'
+  const [activeTab, setActiveTab] = useState('orders');
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
+    const token = getAccessToken();
     if (!token) {
       alert('로그인이 필요한 서비스입니다. 🌱');
       navigate('/login');
       return;
     }
 
-    // 백엔드에서 내 정보 가져오기
-    axios.get('http://localhost:8080/api/members/me', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then((response) => {
-      setUserInfo(response.data);
-      setIsLoading(false);
-    })
-    .catch((error) => {
-      console.error('사용자 정보 조회 실패:', error);
-      alert('로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
-      localStorage.removeItem('accessToken');
-      navigate('/login');
-    });
+    apiClient.get(api.members.me, { headers: authHeaders(token) })
+      .then((response) => {
+        setUserInfo(response.data);
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        console.error('사용자 정보 조회 실패:', error);
+        alert('로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
+        localStorage.removeItem('accessToken');
+        navigate('/login');
+      });
   }, [navigate]);
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (activeTab === 'cart' && token) {
-      axios.get('http://localhost:8080/api/cart', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      .then((response) => {
-        setCartItems(response.data);
-      })
-      .catch((error) => {
-        console.error('장바구니 조회 실패:', error);
-      });
-    } else if (activeTab === 'wishlist' && token) {
-      axios.get('http://localhost:8080/api/wishlist', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      .then((response) => {
-        setWishlistItems(response.data);
-      })
-      .catch((error) => {
-        console.error('찜 목록 조회 실패:', error);
-      });
+    const token = getAccessToken();
+    if (!token) return;
+
+    if (activeTab === 'cart') {
+      apiClient.get(api.cart.list, { headers: authHeaders(token) })
+        .then((response) => setCartItems(response.data))
+        .catch((error) => console.error('장바구니 조회 실패:', error));
+    } else if (activeTab === 'wishlist') {
+      apiClient.get(api.wishlist.list, { headers: authHeaders(token) })
+        .then((response) => setWishlistItems(response.data))
+        .catch((error) => console.error('찜 목록 조회 실패:', error));
     }
   }, [activeTab]);
 
   if (isLoading) {
-    return (
-      <BoxedLayout>
-        <div className="container">
-          <div className="loading-text" style={{ textAlign: 'center', padding: '100px 0', fontSize: '18px', color: '#666' }}>이웃님의 정보를 정성스레 불러오고 있습니다...</div>
-        </div>
-      </BoxedLayout>
-    );
+    return <div className="loading-text">이웃님의 정보를 불러오고 있습니다...</div>;
   }
 
-  // 메뉴별 렌더링 함수
+  const goToProduct = (productId) => navigate(`/products/${productId}`);
+
   const renderContent = () => {
     switch (activeTab) {
       case 'orders':
@@ -87,38 +96,18 @@ function MyPage() {
                 <p>찜한 상품이 없습니다. 마음에 드는 상품에 하트를 눌러보세요.</p>
               </div>
             ) : (
-              <ul style={{ listStyle: 'none', padding: 0 }}>
-                {wishlistItems.map(item => (
-                  <li key={item.wishlistItemId} style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid #eee', padding: '10px 0' }}>
-                    <img 
-                      src={item.primaryImageUrl || 'https://via.placeholder.com/80'} 
-                      alt={item.productName} 
-                      onClick={() => navigate(`/products/${item.productId}`)}
-                      style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px', marginRight: '15px', cursor: 'pointer' }}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <h4 
-                        onClick={() => navigate(`/products/${item.productId}`)}
-                        style={{ margin: '0 0 5px 0', fontSize: '16px', cursor: 'pointer', display: 'inline-block' }}
-                      >
-                        {item.productName}
-                      </h4>
-                      <p style={{ margin: '0', color: '#666', fontSize: '14px' }}>
-                        <strong>{item.price.toLocaleString()}원</strong>
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <ItemList items={wishlistItems} onNavigate={goToProduct} />
             )}
           </section>
         );
       case 'cart':
         return (
           <section className="fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="mypage-section-header">
               <h3 className="section-title">내 장바구니</h3>
-              <button className="btn-text-link" onClick={() => navigate('/cart')} style={{ fontSize: '14px' }}>자세히 보기 &gt;</button>
+              <button type="button" className="btn-text-link" onClick={() => navigate('/cart')}>
+                자세히 보기 &gt;
+              </button>
             </div>
             {cartItems.length === 0 ? (
               <div className="empty-state">
@@ -126,29 +115,7 @@ function MyPage() {
                 <p>장바구니에 담긴 상품이 없습니다.</p>
               </div>
             ) : (
-              <ul style={{ listStyle: 'none', padding: 0 }}>
-                {cartItems.map(item => (
-                  <li key={item.cartItemId} style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid #eee', padding: '10px 0' }}>
-                    <img 
-                      src={item.primaryImageUrl || 'https://via.placeholder.com/50'} 
-                      alt={item.productName} 
-                      onClick={() => navigate(`/products/${item.productId}`)}
-                      style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px', marginRight: '15px', cursor: 'pointer' }}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <h4 
-                        onClick={() => navigate(`/products/${item.productId}`)}
-                        style={{ margin: '0 0 5px 0', fontSize: '16px', cursor: 'pointer', display: 'inline-block' }}
-                      >
-                        {item.productName}
-                      </h4>
-                      <p style={{ margin: '0', color: '#666', fontSize: '14px' }}>
-                        {item.price.toLocaleString()}원 x {item.count}개 = <strong>{(item.price * item.count).toLocaleString()}원</strong>
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <ItemList items={cartItems} onNavigate={goToProduct} />
             )}
           </section>
         );
@@ -159,8 +126,8 @@ function MyPage() {
             <div className="empty-state">
               <div className="empty-icon">👤</div>
               <p>회원 정보 수정 기능은 준비 중입니다.</p>
-              <p style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
-                가입하신 아이디: <strong>{userInfo?.loginId}</strong><br/>
+              <p className="profile-summary">
+                가입하신 아이디: <strong>{userInfo?.loginId}</strong><br />
                 이름: <strong>{userInfo?.name}</strong>
               </p>
             </div>
@@ -172,48 +139,30 @@ function MyPage() {
   };
 
   return (
-    <BoxedLayout>
-      <div className="container">
-        <div className="mypage-container">
-          {/* 사이드바 메뉴 */}
-          <aside className="mypage-sidebar">
-            <h2>마이페이지</h2>
-            <nav className="mypage-nav">
-              <button 
-                className={`mypage-nav-item ${activeTab === 'orders' ? 'active' : ''}`}
-                onClick={() => setActiveTab('orders')}
-              >
-                주문/배송 조회
-              </button>
-              <button 
-                className={`mypage-nav-item ${activeTab === 'wishlist' ? 'active' : ''}`}
-                onClick={() => setActiveTab('wishlist')}
-              >
-                찜한 상품
-              </button>
-              <button 
-                className={`mypage-nav-item ${activeTab === 'cart' ? 'active' : ''}`}
-                onClick={() => setActiveTab('cart')}
-              >
-                장바구니
-              </button>
-              <button 
-                className={`mypage-nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-                onClick={() => setActiveTab('profile')}
-              >
-                회원 정보 수정
-              </button>
-            </nav>
-          </aside>
+    <div className="mypage-container">
+      <aside className="mypage-sidebar">
+        <h2>마이페이지</h2>
+        <nav className="mypage-nav">
+          {[
+            ['orders', '주문/배송 조회'],
+            ['wishlist', '찜한 상품'],
+            ['cart', '장바구니'],
+            ['profile', '회원 정보 수정'],
+          ].map(([tab, label]) => (
+            <button
+              key={tab}
+              type="button"
+              className={`mypage-nav-item ${activeTab === tab ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+      </aside>
 
-          {/* 메인 콘텐츠 영역 */}
-          <main className="mypage-content">
-            {/* 탭별 상세 내용 */}
-            {renderContent()}
-          </main>
-        </div>
-      </div>
-    </BoxedLayout>
+      <main className="mypage-content">{renderContent()}</main>
+    </div>
   );
 }
 

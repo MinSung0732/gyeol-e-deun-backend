@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
-import FullWidthLayout from '../components/layout/FullWidthLayout';
+import { apiClient, api, authHeaders } from '../utils/api';
 import '../css/home.css';
 
 function Home() {
@@ -11,12 +10,8 @@ function Home() {
     const token = localStorage.getItem('accessToken');
     if (!token) return;
 
-    axios.get('http://localhost:8080/api/members/me', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((response) => {
-        setIsAdmin(response.data.role === 'ROLE_ADMIN');
-      })
+    apiClient.get(api.members.me, { headers: authHeaders(token) })
+      .then((response) => setIsAdmin(response.data.role === 'ROLE_ADMIN'))
       .catch(() => setIsAdmin(false));
   }, []);
 
@@ -27,7 +22,7 @@ function Home() {
   }, []);
 
   return (
-    <FullWidthLayout className="home-page">
+    <div className="home-page">
       <section className="home-hero-full">
         <div className="home-hero-overlay" />
         <div className="home-hero-content">
@@ -35,13 +30,9 @@ function Home() {
           <h1>결이든에 오신 것을 환영합니다 🌿</h1>
           <p>자연의 편안함과 따뜻한 나눔이 머무는 곳, 건강한 선택을 시작해 보세요.</p>
           <div className="home-actions">
-            <Link to="/products" className="home-btn home-btn-primary">
-              상품 둘러보기
-            </Link>
+            <Link to="/products" className="home-btn home-btn-primary">상품 둘러보기</Link>
             {isAdmin && (
-              <Link to="/admin/product/add" className="home-btn home-btn-admin">
-                상품 등록하기
-              </Link>
+              <Link to="/admin/product/add" className="home-btn home-btn-admin">상품 등록하기</Link>
             )}
           </div>
         </div>
@@ -84,11 +75,9 @@ function Home() {
       <section className="home-cta-full">
         <h2>지금, 결이든의 상품을 만나보세요</h2>
         <p>자연이 전하는 편안함을 일상에 담아 보세요.</p>
-        <Link to="/products" className="home-btn home-btn-primary home-btn-lg">
-          추천 상품 보러가기
-        </Link>
+        <Link to="/products" className="home-btn home-btn-primary home-btn-lg">추천 상품 보러가기</Link>
       </section>
-    </FullWidthLayout>
+    </div>
   );
 }
 

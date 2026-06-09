@@ -102,6 +102,18 @@
 }
 
 /* 섹션 타이틀 */
+.mypage-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-summary {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #666;
+}
+
 .section-title {
   font-size: 20px;
   color: #333;

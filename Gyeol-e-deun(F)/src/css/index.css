@@ -13,36 +13,10 @@ body {
   line-height: 1.6;
 }
 
-/* 글로벌 레이아웃 컨테이너 */
-.container {
-  max-width: 1440px;
-  margin: 0 auto;
-  width: 100%;
-  padding: 0 20px;
-}
-
-.app-container {
-  padding: 50px;
-}
-
 h1 {
-  color: #2E5C3A; 
+  color: #2E5C3A;
   margin-bottom: 10px;
 }
-
-/* --- 공통 버튼 스타일 --- */
-.link-button {
-  display: inline-block;
-  margin-top: 25px;
-  padding: 12px 24px;
-  background-color: #4A7C59; 
-  color: white;
-  text-decoration: none;
-  border-radius: 30px; 
-  transition: background-color 0.3s;
-  font-weight: bold;
-}
-.link-button:hover { background-color: #3b6347; }
 
 .btn-outline {
   padding: 0 16px;
