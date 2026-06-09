@@ -24,7 +24,7 @@ public class WishlistController {
     private WishlistService wishlistService;
 
     @PostMapping("/toggle/{productId}")
-    public ResponseEntity<?> toggleWishlist(@PathVariable Long productId) {
+    public ResponseEntity<?> toggleWishlist(@PathVariable("productId") Long productId) {
         try {
             boolean isAdded = wishlistService.toggleWishlist(SecurityUtil.getCurrentLoginId(), productId);
             return ResponseEntity.ok(Map.of(

@@ -43,7 +43,7 @@ public class CartController {
     }
 
     @DeleteMapping("/{cartItemId}")
-    public ResponseEntity<String> deleteCartItem(@PathVariable Long cartItemId) {
+    public ResponseEntity<String> deleteCartItem(@PathVariable("cartItemId") Long cartItemId) {
         try {
             cartService.deleteCartItem(SecurityUtil.getCurrentLoginId(), cartItemId);
             return ResponseEntity.ok("장바구니 상품이 삭제되었습니다.");

@@ -36,7 +36,22 @@ function ProductDetail() {
     setQuantity(1);
 
     apiClient.get(api.products.detail(id))
-      .then((response) => setProduct(response.data))
+      .then((response) => {
+        const prod = response.data;
+        setProduct(prod);
+
+        const recent = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+        const updatedRecent = [
+          {
+            productId: prod.productId,
+            productName: prod.name,
+            primaryImageUrl: prod.thumbnailUrl,
+            price: prod.price
+          },
+          ...recent.filter(item => item.productId !== prod.productId)
+        ].slice(0, 5);
+        localStorage.setItem('recentlyViewed', JSON.stringify(updatedRecent));
+      })
       .catch((err) => {
         console.error('물품 정보를 가져오지 못했습니다:', err);
         setError('상품 정보를 불러오지 못했습니다.');

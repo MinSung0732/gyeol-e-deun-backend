@@ -5,11 +5,11 @@ import { IMAGE_PLACEHOLDER } from '../utils/productImages';
 import MyDashboard from '../components/MyDashboard';
 import '../css/mypage.css';
 
-function ItemList({ items, onNavigate }) {
+function ItemList({ items, onNavigate, onDelete }) {
   return (
     <ul className="item-list">
       {items.map((item) => (
-        <li key={item.wishlistItemId || item.cartItemId} className="item-list-row">
+        <li key={item.wishlistItemId || item.cartItemId || item.productId} className="item-list-row">
           <img
             src={item.primaryImageUrl || IMAGE_PLACEHOLDER.thumb}
             alt={item.productName}
@@ -26,6 +26,11 @@ function ItemList({ items, onNavigate }) {
                 : `${item.price.toLocaleString()}원`}
             </p>
           </div>
+          {onDelete && item.cartItemId && (
+            <button type="button" className="btn-delete" onClick={() => onDelete(item.cartItemId)}>
+              삭제
+            </button>
+          )}
         </li>
       ))}
     </ul>
@@ -36,6 +41,7 @@ function MyPage() {
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState(null);
   const [cartItems, setCartItems] = useState([]);
+  const [recentItems, setRecentItems] = useState([]);
   const [wishlistItems, setWishlistItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('orders');
@@ -69,6 +75,9 @@ function MyPage() {
       apiClient.get(api.cart.list, { headers: authHeaders(token) })
         .then((response) => setCartItems(response.data))
         .catch((error) => console.error('장바구니 조회 실패:', error));
+      
+      const recent = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+      setRecentItems(recent);
     } else if (activeTab === 'wishlist') {
       apiClient.get(api.wishlist.list, { headers: authHeaders(token) })
         .then((response) => setWishlistItems(response.data))
@@ -81,6 +90,20 @@ function MyPage() {
   }
 
   const goToProduct = (productId) => navigate(`/products/${productId}`);
+
+  const handleDeleteCartItem = async (cartItemId) => {
+    if (!window.confirm('장바구니에서 이 상품을 삭제하시겠습니까?')) return;
+
+    try {
+      const token = getAccessToken();
+      await apiClient.delete(api.cart.remove(cartItemId), { headers: authHeaders(token) });
+      setCartItems((prev) => prev.filter((item) => item.cartItemId !== cartItemId));
+      alert('상품이 삭제되었습니다.');
+    } catch (error) {
+      console.error('장바구니 상품 삭제 실패:', error);
+      alert('상품 삭제에 실패했습니다.');
+    }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -104,7 +127,7 @@ function MyPage() {
         return (
           <section className="fade-in">
             <div className="mypage-section-header">
-              <h3 className="section-title">내 장바구니</h3>
+              <h3 className="section-title">장바구니에 담긴 상품</h3>
               <button type="button" className="btn-text-link" onClick={() => navigate('/cart')}>
                 자세히 보기 &gt;
               </button>
@@ -115,7 +138,19 @@ function MyPage() {
                 <p>장바구니에 담긴 상품이 없습니다.</p>
               </div>
             ) : (
-              <ItemList items={cartItems} onNavigate={goToProduct} />
+              <ItemList items={cartItems} onNavigate={goToProduct} onDelete={handleDeleteCartItem} />
+            )}
+
+            <div className="mypage-section-header" style={{ marginTop: '3rem' }}>
+              <h3 className="section-title">내가 최근에 본 상품</h3>
+            </div>
+            {recentItems.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">👀</div>
+                <p>최근 본 상품이 없습니다.</p>
+              </div>
+            ) : (
+              <ItemList items={recentItems} onNavigate={goToProduct} />
             )}
           </section>
         );
