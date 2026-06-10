@@ -32,7 +32,10 @@ function Home() {
           <div className="home-actions">
             <Link to="/products" className="home-btn home-btn-primary">상품 둘러보기</Link>
             {isAdmin && (
-              <Link to="/admin/product/add" className="home-btn home-btn-admin">상품 등록하기</Link>
+              <>
+                <Link to="/admin/product/add" className="home-btn home-btn-admin">상품 등록하기</Link>
+                <Link to="/admin/products" className="home-btn home-btn-admin">상품 관리하기</Link>
+              </>
             )}
           </div>
         </div>

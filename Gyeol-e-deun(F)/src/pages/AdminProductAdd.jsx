@@ -1,16 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient, api, authHeaders, getAccessToken } from '../utils/api';
 import '../css/admin.css';
-
-const CATEGORIES = [
-  '건강식품',
-  '생활용품',
-  '원예/식물',
-  '뷰티/케어',
-  '식품',
-  '기타',
-];
 
 const STATUS_OPTIONS = [
   { value: 'ON_SALE', label: '판매중' },
@@ -116,18 +107,33 @@ function AdminProductAdd() {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
 
   const [name, setName] = useState('');
-  const [category, setCategory] = useState('');
-  const [customCategory, setCustomCategory] = useState('');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
   const [status, setStatus] = useState('ON_SALE');
   const [description, setDescription] = useState('');
 
+  const [categoryTree, setCategoryTree] = useState([]);
+  const [selectedMajorId, setSelectedMajorId] = useState('');
+  const [selectedMinorId, setSelectedMinorId] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newParentId, setNewParentId] = useState('');
+  const [customCategory, setCustomCategory] = useState('');
+
   const [thumbnailItems, setThumbnailItems] = useState([]);
   const [detailFile, setDetailFile] = useState(null);
   const [detailPreview, setDetailPreview] = useState(null);
+
+  const loadCategories = () => {
+    apiClient.get(api.categories.list)
+      .then((response) => setCategoryTree(response.data))
+      .catch((error) => {
+        console.error('카테고리 조회 실패:', error);
+        setCategoryTree([]);
+      });
+  };
 
   useEffect(() => {
     const token = getAccessToken();
@@ -141,7 +147,13 @@ function AdminProductAdd() {
         setIsAdmin(response.data.role === 'ROLE_ADMIN');
       })
       .catch(() => setIsAdmin(false));
+
+    loadCategories();
   }, []);
+
+  const topCategories = useMemo(() => categoryTree, [categoryTree]);
+  const selectedMajor = topCategories.find((category) => String(category.id) === selectedMajorId);
+  const minorCategories = selectedMajor?.children || [];
 
   const handleAddThumbnails = (files) => {
     const remaining = MAX_THUMBNAILS - thumbnailItems.length;
@@ -166,7 +178,12 @@ function AdminProductAdd() {
     setDetailPreview(file ? URL.createObjectURL(file) : null);
   };
 
-  const resolvedCategory = category === '기타' ? customCategory.trim() : category;
+  const selectedMinor = minorCategories.find((category) => String(category.id) === selectedMinorId);
+  const resolvedCategory = selectedMinor
+    ? `${selectedMajor?.name} > ${selectedMinor.name}`
+    : selectedMajor
+      ? selectedMajor.name
+      : customCategory.trim();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -232,6 +249,40 @@ function AdminProductAdd() {
     }
   };
 
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) {
+      alert('카테고리 이름을 입력해 주세요.');
+      return;
+    }
+
+    const token = getAccessToken();
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      navigate('/login');
+      return;
+    }
+
+    setIsAddingCategory(true);
+    try {
+      await apiClient.post(api.categories.add, {
+        name: newCategoryName.trim(),
+        parentId: newParentId ? Number(newParentId) : null,
+      }, {
+        headers: authHeaders(token),
+      });
+
+      setNewCategoryName('');
+      setNewParentId('');
+      loadCategories();
+      alert('카테고리가 추가되었습니다.');
+    } catch (error) {
+      console.error('카테고리 추가 오류:', error);
+      alert('카테고리 추가 중 오류가 발생했습니다.');
+    } finally {
+      setIsAddingCategory(false);
+    }
+  };
+
   if (isAdmin === null) {
     return <div className="admin-loading">권한을 확인하는 중입니다...</div>;
   }
@@ -257,6 +308,65 @@ function AdminProductAdd() {
         <p>쇼핑몰에 노출될 상품 정보를 입력해 주세요.</p>
       </div>
 
+      <section className="form-section category-manager-section">
+        <h3 className="section-title">카테고리 관리</h3>
+        <p className="field-hint">
+          관리자 페이지에서 대분류/소분류를 추가하면 상품 등록 시 바로 선택해서 사용할 수 있습니다.
+        </p>
+        <div className="category-manager-grid">
+          <div className="form-group">
+            <label>새 카테고리 이름 *</label>
+            <input
+              type="text"
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              placeholder="예) 영양제"
+            />
+          </div>
+          <div className="form-group">
+            <label>상위 카테고리</label>
+            <select
+              value={newParentId}
+              onChange={(e) => setNewParentId(e.target.value)}
+            >
+              <option value="">대분류로 추가</option>
+              {topCategories.map((category) => (
+                <option key={category.id} value={category.id}>{category.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group category-add-button-group">
+            <button
+              type="button"
+              className="btn-submit-nature btn-add-category"
+              onClick={handleAddCategory}
+              disabled={isAddingCategory}
+            >
+              {isAddingCategory ? '추가 중...' : '카테고리 추가'}
+            </button>
+          </div>
+        </div>
+
+        <div className="category-list-admin">
+          {topCategories.length === 0 ? (
+            <p>등록된 카테고리가 없습니다.</p>
+          ) : (
+            topCategories.map((category) => (
+              <div key={category.id} className="category-list-item">
+                <strong>{category.name}</strong>
+                {category.children?.length > 0 && (
+                  <div className="category-children">
+                    {category.children.map((child) => (
+                      <div key={child.id} className="category-child">- {child.name}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
       <form className="admin-form" onSubmit={handleSubmit}>
         <section className="form-section">
           <h3 className="section-title">기본 정보</h3>
@@ -274,26 +384,48 @@ function AdminProductAdd() {
 
           <div className="form-group-row">
             <div className="form-group">
-              <label>카테고리 *</label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} required>
-                <option value="">카테고리 선택</option>
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+              <label>대분류</label>
+              <select
+                value={selectedMajorId}
+                onChange={(e) => {
+                  setSelectedMajorId(e.target.value);
+                  setSelectedMinorId('');
+                  setCustomCategory('');
+                }}
+              >
+                <option value="">대분류 선택</option>
+                {topCategories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
             </div>
-            {category === '기타' && (
-              <div className="form-group">
-                <label>직접 입력 *</label>
-                <input
-                  type="text"
-                  value={customCategory}
-                  onChange={(e) => setCustomCategory(e.target.value)}
-                  placeholder="카테고리명 입력"
-                  required
-                />
-              </div>
-            )}
+            <div className="form-group">
+              <label>소분류</label>
+              <select
+                value={selectedMinorId}
+                onChange={(e) => setSelectedMinorId(e.target.value)}
+                disabled={!selectedMajorId || minorCategories.length === 0}
+              >
+                <option value="">소분류 선택</option>
+                {minorCategories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>직접 입력</label>
+            <input
+              type="text"
+              value={customCategory}
+              onChange={(e) => setCustomCategory(e.target.value)}
+              placeholder="카테고리를 직접 입력하려면 작성하세요."
+              disabled={!!selectedMajorId}
+            />
+            <p className="field-hint">
+              대분류 또는 소분류를 선택하면 자동으로 선택한 카테고리가 적용됩니다.
+            </p>
           </div>
 
           <div className="form-group-row">

@@ -1,5 +1,6 @@
 package com.example.minsung.demo.service.productService;
 
+import com.example.minsung.demo.dto.productDto.BulkProductUpdateRequestDto;
 import com.example.minsung.demo.dto.productDto.ProductRequestDto;
 import com.example.minsung.demo.dto.productDto.ProductResponseDto;
 import com.example.minsung.demo.entity.Product;
@@ -9,7 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ProductService {
@@ -43,20 +47,53 @@ public class ProductService {
 
     // 상품 목록 조회 기능
     public List<ProductResponseDto> getAllProducts() {
-        // 1. 창고(DB)에서 모든 상품(Entity)을 싹 다 꺼내옵니다. (JPA가 findAll() 기능 자동 제공)
         List<Product> productList = productRepository.findAll(); 
-        
-        // 2. 프론트엔드로 내보낼 택배 상자(DTO)들을 담을 '큰 박스(List)'를 하나 준비합니다.
         List<ProductResponseDto> dtoList = new ArrayList<>();
-        
-        // 3. 창고에서 꺼낸 상품들을 하나씩(for문) 택배 상자(DTO)에 예쁘게 옮겨 담습니다.
         for (Product product : productList) {
-            ProductResponseDto dto = new ProductResponseDto(product); // 알맹이를 상자에 넣음
-            dtoList.add(dto); // 상자를 큰 박스에 차곡차곡 쌓음
+            ProductResponseDto dto = new ProductResponseDto(product);
+            dtoList.add(dto);
         }
-        
-        // 4. 포장이 끝난 큰 박스를 반환(리턴)합니다!
         return dtoList;
+    }
+
+    public List<ProductResponseDto> getProducts(int page, int size) {
+        Page<Product> productPage = productRepository.findAll(PageRequest.of(page, size));
+        List<ProductResponseDto> dtoList = new ArrayList<>();
+        for (Product product : productPage.getContent()) {
+            dtoList.add(new ProductResponseDto(product));
+        }
+        return dtoList;
+    }
+
+    @Transactional
+    public void bulkUpdateProducts(BulkProductUpdateRequestDto request) {
+        if (request.getProductIds() == null || request.getProductIds().isEmpty()) {
+            throw new IllegalArgumentException("적어도 하나의 상품을 선택해야 합니다.");
+        }
+
+        if (request.getStatus() == null && request.getDiscountPercent() == null) {
+            throw new IllegalArgumentException("변경할 상태 또는 할인 정보를 입력해야 합니다.");
+        }
+
+        if (request.getDiscountPercent() != null) {
+            int percent = request.getDiscountPercent();
+            if (percent <= 0 || percent > 100) {
+                throw new IllegalArgumentException("할인율은 1~100 사이여야 합니다.");
+            }
+        }
+
+        List<Product> products = productRepository.findAllById(request.getProductIds());
+        for (Product product : products) {
+            if (request.getStatus() != null) {
+                product.setStatus(request.getStatus());
+            }
+            if (request.getDiscountPercent() != null) {
+                int newPrice = Math.max(0, product.getPrice() * (100 - request.getDiscountPercent()) / 100);
+                product.setPrice(newPrice);
+            }
+        }
+
+        productRepository.saveAll(products);
     }
 
    // 💡 번호(id)표를 보고 특정 나눔 물품 하나만 정성껏 꺼내옵니다.
@@ -64,7 +101,6 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("해당 물품을 찾을 수 없습니다."));
 
-        // 💡 붉은 줄이 뜨던 6줄의 코드를 다 지우고, 이 딱 한 줄로 끝냅니다!
         return new ProductResponseDto(product);
     }
 }

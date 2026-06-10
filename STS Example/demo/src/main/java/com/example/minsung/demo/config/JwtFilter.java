@@ -15,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
@@ -37,8 +38,9 @@ public class JwtFilter extends OncePerRequestFilter {
             try {
                 Claims claims = jwtUtil.parseClaims(token);
                 String loginId = claims.getSubject();
+                System.out.println("Parsed role: " + claims.get("role", String.class));
                 String role = claims.get("role", String.class);
-                String authority = role != null ? role : "ROLE_USER";
+                String authority = normalizeRole(role);
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
@@ -57,5 +59,19 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private String normalizeRole(String role) {
+        if (role == null || role.isBlank()) {
+            return "ROLE_USER";
+        }
+        String normalized = role.trim().toUpperCase(Locale.ROOT);
+        if (normalized.startsWith("ROLE-")) {
+            normalized = normalized.replace("ROLE-", "ROLE_");
+        }
+        if (!normalized.startsWith("ROLE_")) {
+            normalized = "ROLE_" + normalized;
+        }
+        return normalized;
     }
 }

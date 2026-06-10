@@ -24,9 +24,14 @@ export const api = {
     list: '/api/products',
     detail: (id) => `/api/products/${id}`,
   },
+  categories: {
+    list: '/api/categories',
+    add: '/api/admin/categories',
+  },
   admin: {
     products: '/api/admin/products',
     upload: '/api/admin/upload',
+    bulkProducts: '/api/admin/products/bulk',
   },
   cart: {
     list: '/api/cart',

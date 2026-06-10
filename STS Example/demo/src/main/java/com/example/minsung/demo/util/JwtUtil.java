@@ -7,7 +7,9 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.time.Instant;
 import java.util.Date;
+import java.util.Locale;
 
 @Component
 public class JwtUtil {
@@ -19,11 +21,25 @@ public class JwtUtil {
     public String generateToken(String loginId, String role) {
         return Jwts.builder()
                 .setSubject(loginId)
-                .claim("role", role)
+                .claim("role", normalizeRole(role))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expireTime))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    private String normalizeRole(String role) {
+        if (role == null || role.isBlank()) {
+            return "ROLE_USER";
+        }
+        String normalized = role.trim().toUpperCase(Locale.ROOT);
+        if (normalized.startsWith("ROLE-")) {
+            normalized = normalized.replace("ROLE-", "ROLE_");
+        }
+        if (!normalized.startsWith("ROLE_")) {
+            normalized = "ROLE_" + normalized;
+        }
+        return normalized;
     }
 
     public String getLoginIdFromToken(String token) {
