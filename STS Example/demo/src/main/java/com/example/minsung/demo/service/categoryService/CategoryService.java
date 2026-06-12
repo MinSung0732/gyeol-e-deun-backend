@@ -63,4 +63,15 @@ public class CategoryService {
         Category saved = categoryRepository.save(category);
         return new CategoryResponseDto(saved);
     }
+
+    public void deleteCategory(Long id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("카테고리를 찾을 수 없습니다."));
+
+        if (!category.getChildren().isEmpty()) {
+            throw new RuntimeException("하위 카테고리가 존재하여 삭제할 수 없습니다.");
+        }
+
+        categoryRepository.delete(category);
+    }
 }

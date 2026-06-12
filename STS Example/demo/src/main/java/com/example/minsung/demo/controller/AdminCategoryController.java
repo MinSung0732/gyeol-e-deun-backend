@@ -6,6 +6,8 @@ import com.example.minsung.demo.service.categoryService.CategoryService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,5 +23,11 @@ public class AdminCategoryController {
     @PostMapping
     public ResponseEntity<CategoryResponseDto> createCategory(@RequestBody CategoryRequestDto request) {
         return ResponseEntity.ok(categoryService.createCategory(request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCategory(@PathVariable("id") Long id) {
+        categoryService.deleteCategory(id);
+        return ResponseEntity.noContent().build();
     }
 }

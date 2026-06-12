@@ -12,6 +12,24 @@ function ProductList() {
   const [expandedMajors, setExpandedMajors] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Layout state: '4x4' (16), '4x5' (20), '5x5' (25)
+  const [gridLayout, setGridLayout] = useState('5x5');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  const itemsPerPage = useMemo(() => {
+    if (gridLayout === '4x4') return 16;
+    if (gridLayout === '4x5') return 20;
+    return 25; // '5x5'
+  }, [gridLayout]);
+
+  const gridColumns = useMemo(() => {
+    if (gridLayout === '5x5') return 5;
+    return 4; // '4x4' and '4x5'
+  }, [gridLayout]);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -103,6 +121,60 @@ function ProductList() {
   const filteredProducts = useMemo(() => {
     return products.filter((product) => categoryMatches(product.category, selectedCategory));
   }, [products, selectedCategory]);
+
+  // Reset page when category or layout changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategoryId, gridLayout]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const currentProducts = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredProducts.slice(start, start + itemsPerPage);
+  }, [filteredProducts, currentPage, itemsPerPage]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    const pages = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(
+        <button
+          key={i}
+          className={`page-btn ${currentPage === i ? 'active' : ''}`}
+          onClick={() => handlePageChange(i)}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    return (
+      <div className="pagination-block">
+        <button
+          className="page-btn nav-btn"
+          disabled={currentPage === 1}
+          onClick={() => handlePageChange(currentPage - 1)}
+        >
+          &lt;
+        </button>
+        {pages}
+        <button
+          className="page-btn nav-btn"
+          disabled={currentPage === totalPages}
+          onClick={() => handlePageChange(currentPage + 1)}
+        >
+          &gt;
+        </button>
+      </div>
+    );
+  };
 
   const handleToggleWishlist = (e, productId) => {
     e.stopPropagation();
@@ -235,55 +307,85 @@ function ProductList() {
 
         <div className="product-content">
           <div className="product-section-header">
-            <h3>추천 상품</h3>
-            {selectedCategory && (
-              <p className="selected-category-label">{selectedCategory.parentName ? `${selectedCategory.parentName} > ${selectedCategory.name}` : selectedCategory.name} 선택중</p>
-            )}
+            <div className="header-left">
+              <h3>추천 상품</h3>
+              {selectedCategory && (
+                <p className="selected-category-label">{selectedCategory.parentName ? `${selectedCategory.parentName} > ${selectedCategory.name}` : selectedCategory.name} 선택중</p>
+              )}
+            </div>
+            <div className="layout-controls">
+              <button 
+                className={`layout-btn ${gridLayout === '4x4' ? 'active' : ''}`} 
+                onClick={() => setGridLayout('4x4')}
+                title="4x4 배열 (16개)"
+              >
+                ▤
+              </button>
+              <button 
+                className={`layout-btn ${gridLayout === '4x5' ? 'active' : ''}`} 
+                onClick={() => setGridLayout('4x5')}
+                title="4x5 배열 (20개)"
+              >
+                ▦
+              </button>
+              <button 
+                className={`layout-btn ${gridLayout === '5x5' ? 'active' : ''}`} 
+                onClick={() => setGridLayout('5x5')}
+                title="5x5 배열 (25개)"
+              >
+                ▦
+              </button>
+            </div>
           </div>
+
+          <div className="layout-controls-divider"></div>
 
           {filteredProducts.length === 0 ? (
             <p className="no-product">선택한 카테고리의 상품이 없습니다. 다른 카테고리를 선택해 주세요.</p>
           ) : (
-            <div className="product-grid">
-              {filteredProducts.map((product) => (
-                <div
-                  className="product-card"
-                  key={product.productId}
-                  onClick={() => navigate(`/products/${product.productId}`)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="thumbnail-box">
-                    <img src={getPrimaryThumbnail(product)} alt={product.name} />
-                    <button
-                      type="button"
-                      className="btn-wishlist"
-                      onClick={(e) => handleToggleWishlist(e, product.productId)}
-                      title={wishlist.includes(product.productId) ? '찜 해제' : '찜하기'}
-                    >
-                      {wishlist.includes(product.productId) ? '❤️' : '🤍'}
-                    </button>
-                    {product.status === 'SOLD_OUT' && <span className="badge sold-out">품절</span>}
-                  </div>
-
-                  <div className="product-info">
-                    {product.category && <span className="product-category">{product.category}</span>}
-                    <h4 className="product-name">{product.name}</h4>
-                    <p className="product-desc">{product.description}</p>
-                    <div className="product-bottom">
-                      <span className="product-price">{product.price.toLocaleString()}원</span>
+            <>
+              <div className="product-grid" style={{ gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))` }}>
+                {currentProducts.map((product) => (
+                  <div
+                    className="product-card"
+                    key={product.productId}
+                    onClick={() => navigate(`/products/${product.productId}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="thumbnail-box">
+                      <img src={getPrimaryThumbnail(product)} alt={product.name} />
                       <button
                         type="button"
-                        className="btn-cart"
-                        disabled={product.status === 'SOLD_OUT' || product.stock <= 0}
-                        onClick={(e) => handleAddToCart(e, product)}
+                        className="btn-wishlist"
+                        onClick={(e) => handleToggleWishlist(e, product.productId)}
+                        title={wishlist.includes(product.productId) ? '찜 해제' : '찜하기'}
                       >
-                        담기
+                        {wishlist.includes(product.productId) ? '❤️' : '🤍'}
                       </button>
+                      {product.status === 'SOLD_OUT' && <span className="badge sold-out">품절</span>}
+                    </div>
+
+                    <div className="product-info">
+                      {product.category && <span className="product-category">{product.category}</span>}
+                      <h4 className="product-name">{product.name}</h4>
+                      <p className="product-desc">{product.description}</p>
+                      <div className="product-bottom">
+                        <span className="product-price">{product.price.toLocaleString()}원</span>
+                        <button
+                          type="button"
+                          className="btn-cart"
+                          disabled={product.status === 'SOLD_OUT' || product.stock <= 0}
+                          onClick={(e) => handleAddToCart(e, product)}
+                        >
+                          담기
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              {renderPagination()}
+            </>
           )}
         </div>
       </section>

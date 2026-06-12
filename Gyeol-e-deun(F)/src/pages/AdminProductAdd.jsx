@@ -283,6 +283,35 @@ function AdminProductAdd() {
     }
   };
 
+  const handleDeleteCategory = async (category) => {
+    if (category.children && category.children.length > 0) {
+      alert('하위 카테고리가 존재하여 대분류를 삭제할 수 없습니다. 소분류를 먼저 삭제해 주세요.');
+      return;
+    }
+
+    if (!window.confirm(`'${category.name}' 카테고리를 정말 삭제하시겠습니까?`)) {
+      return;
+    }
+
+    const token = getAccessToken();
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      await apiClient.delete(api.categories.delete(category.id), {
+        headers: authHeaders(token),
+      });
+      loadCategories();
+      alert('카테고리가 삭제되었습니다.');
+    } catch (error) {
+      console.error('카테고리 삭제 오류:', error);
+      alert(error.response?.data?.message || '카테고리 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   if (isAdmin === null) {
     return <div className="admin-loading">권한을 확인하는 중입니다...</div>;
   }
@@ -308,7 +337,7 @@ function AdminProductAdd() {
         <p>쇼핑몰에 노출될 상품 정보를 입력해 주세요.</p>
       </div>
 
-      <section className="form-section category-manager-section">
+        <section className="form-section category-manager-section">
         <h3 className="section-title">카테고리 관리</h3>
         <p className="field-hint">
           관리자 페이지에서 대분류/소분류를 추가하면 상품 등록 시 바로 선택해서 사용할 수 있습니다.
@@ -353,11 +382,17 @@ function AdminProductAdd() {
           ) : (
             topCategories.map((category) => (
               <div key={category.id} className="category-list-item">
-                <strong>{category.name}</strong>
+                <div className="category-major-header">
+                  <strong>{category.name}</strong>
+                  <button type="button" className="btn-delete-category" onClick={() => handleDeleteCategory(category)}>×</button>
+                </div>
                 {category.children?.length > 0 && (
                   <div className="category-children">
                     {category.children.map((child) => (
-                      <div key={child.id} className="category-child">- {child.name}</div>
+                      <div key={child.id} className="category-child">
+                        <span>- {child.name}</span>
+                        <button type="button" className="btn-delete-category" onClick={() => handleDeleteCategory(child)}>×</button>
+                      </div>
                     ))}
                   </div>
                 )}

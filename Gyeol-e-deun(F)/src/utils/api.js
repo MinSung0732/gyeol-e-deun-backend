@@ -27,6 +27,7 @@ export const api = {
   categories: {
     list: '/api/categories',
     add: '/api/admin/categories',
+    delete: (id) => `/api/admin/categories/${id}`,
   },
   admin: {
     products: '/api/admin/products',
