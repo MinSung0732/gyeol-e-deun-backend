@@ -108,6 +108,7 @@ function AdminProductAdd() {
   const [isAdmin, setIsAdmin] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [expandedCategoryIds, setExpandedCategoryIds] = useState([]);
 
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
@@ -154,6 +155,12 @@ function AdminProductAdd() {
   const topCategories = useMemo(() => categoryTree, [categoryTree]);
   const selectedMajor = topCategories.find((category) => String(category.id) === selectedMajorId);
   const minorCategories = selectedMajor?.children || [];
+  const expandableCategoryIds = useMemo(
+    () => topCategories.filter((category) => (category.children?.length || 0) > 0).map((category) => category.id),
+    [topCategories],
+  );
+  const allCategoriesExpanded = expandableCategoryIds.length > 0
+    && expandableCategoryIds.every((id) => expandedCategoryIds.includes(id));
 
   const handleAddThumbnails = (files) => {
     const remaining = MAX_THUMBNAILS - thumbnailItems.length;
@@ -184,6 +191,22 @@ function AdminProductAdd() {
     : selectedMajor
       ? selectedMajor.name
       : customCategory.trim();
+
+  const toggleCategoryExpansion = (categoryId) => {
+    setExpandedCategoryIds((prev) => (
+      prev.includes(categoryId)
+        ? prev.filter((id) => id !== categoryId)
+        : [...prev, categoryId]
+    ));
+  };
+
+  const expandAllCategories = () => {
+    setExpandedCategoryIds(expandableCategoryIds);
+  };
+
+  const collapseAllCategories = () => {
+    setExpandedCategoryIds([]);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -337,7 +360,7 @@ function AdminProductAdd() {
         <p>쇼핑몰에 노출될 상품 정보를 입력해 주세요.</p>
       </div>
 
-        <section className="form-section category-manager-section">
+      <section className="form-section category-manager-section">
         <h3 className="section-title">카테고리 관리</h3>
         <p className="field-hint">
           관리자 페이지에서 대분류/소분류를 추가하면 상품 등록 시 바로 선택해서 사용할 수 있습니다.
@@ -376,6 +399,17 @@ function AdminProductAdd() {
           </div>
         </div>
 
+        <div className="category-list-toolbar">
+          <button
+            type="button"
+            className="btn-submit-nature btn-small btn-secondary"
+            onClick={allCategoriesExpanded ? collapseAllCategories : expandAllCategories}
+            disabled={expandableCategoryIds.length === 0}
+          >
+            {allCategoriesExpanded ? '전체 접기' : '전체 펼치기'}
+          </button>
+        </div>
+
         <div className="category-list-admin">
           {topCategories.length === 0 ? (
             <p>등록된 카테고리가 없습니다.</p>
@@ -383,10 +417,24 @@ function AdminProductAdd() {
             topCategories.map((category) => (
               <div key={category.id} className="category-list-item">
                 <div className="category-major-header">
-                  <strong>{category.name}</strong>
+                  <button
+                    type="button"
+                    className={`category-major-toggle ${expandedCategoryIds.includes(category.id) ? 'expanded' : ''}`}
+                    onClick={() => toggleCategoryExpansion(category.id)}
+                    aria-expanded={expandedCategoryIds.includes(category.id)}
+                    disabled={(category.children?.length || 0) === 0}
+                  >
+                    <strong>{category.name}</strong>
+                    <span className="category-count-badge">{category.children?.length || 0}개</span>
+                    {(category.children?.length || 0) > 0 && (
+                      <span className="category-chevron" aria-hidden="true">
+                        {expandedCategoryIds.includes(category.id) ? 'v' : '>'}
+                      </span>
+                    )}
+                  </button>
                   <button type="button" className="btn-delete-category" onClick={() => handleDeleteCategory(category)}>×</button>
                 </div>
-                {category.children?.length > 0 && (
+                {category.children?.length > 0 && expandedCategoryIds.includes(category.id) && (
                   <div className="category-children">
                     {category.children.map((child) => (
                       <div key={child.id} className="category-child">
