@@ -8,6 +8,7 @@ function Header() {
   const location = useLocation();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -15,6 +16,7 @@ function Header() {
     if (!token) {
       setIsLoggedIn(false);
       setUserName('');
+      setIsAdmin(false);
       return;
     }
 
@@ -22,11 +24,13 @@ function Header() {
       .then((response) => {
         setIsLoggedIn(true);
         setUserName(response.data.name);
+        setIsAdmin(response.data.role === 'ADMIN' || response.data.role === 'ROLE_ADMIN');
       })
       .catch(() => {
         localStorage.removeItem('accessToken');
         setIsLoggedIn(false);
         setUserName('');
+        setIsAdmin(false);
       });
   }, [location.pathname]);
 
@@ -42,6 +46,7 @@ function Header() {
     localStorage.removeItem('accessToken');
     setIsLoggedIn(false);
     setUserName('');
+    setIsAdmin(false);
     navigate('/');
   };
 
@@ -53,8 +58,11 @@ function Header() {
         </div>
 
         <nav className="header-nav">
+          <button type="button" className="btn-text-link" onClick={goToAbout}>회사 소개</button>  
           <button type="button" className="btn-text-link" onClick={() => navigate('/products')}>상품</button>
-          <button type="button" className="btn-text-link" onClick={goToAbout}>회사 소개</button>
+          {isAdmin && (
+            <button type="button" className="btn-text-link" onClick={() => navigate('/admin/dashboard')}>관리자 페이지</button>
+          )}
         </nav>
 
         <div className="top-nav-right">

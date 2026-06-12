@@ -1,0 +1,100 @@
+.footer-wrapper {
+  width: 100%;
+  background-color: #2b332d; /* 어둡고 차분한 그린/그레이 계열 톤 */
+  color: #a8b8ac;
+  padding: 40px 0;
+  margin-top: auto; /* 내용이 적어도 하단에 위치하도록 */
+}
+
+.footer-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.footer-top-links {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 32px;
+  border-bottom: 1px solid #3f4d43;
+  padding-bottom: 20px;
+}
+
+.footer-link {
+  color: #a8b8ac;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.footer-link:hover {
+  color: #fff;
+}
+
+.footer-link.highlight {
+  color: #eef2ef;
+  font-weight: bold;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 40px;
+}
+
+/* 좌측 CS 영역 */
+.footer-cs-section {
+  flex: 1;
+}
+
+.footer-brand {
+  color: #fff;
+  font-size: 20px;
+  margin-bottom: 12px;
+  font-weight: bold;
+}
+
+.cs-number {
+  font-size: 28px;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 10px;
+}
+
+.cs-hours,
+.cs-email {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #a8b8ac;
+}
+
+/* 우측 법적 필수 정보 영역 */
+.footer-info-section {
+  flex: 1;
+  text-align: right;
+}
+
+.info-text {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #8a9a8e;
+  margin-bottom: 16px;
+}
+
+.copyright {
+  font-size: 12px;
+  color: #6b7a6d;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .footer-content {
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .footer-info-section {
+    text-align: left;
+  }
+}

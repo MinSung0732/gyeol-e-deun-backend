@@ -297,7 +297,7 @@
   margin-top: 8px;
   transition: background-color 0.3s;
 }
-..btn-submit-nature:hover:not(:disabled) { background-color: #4a5c4e; }
+.btn-submit-nature:hover:not(:disabled) { background-color: #4a5c4e; }
 .btn-submit-nature:disabled {
   background-color: #a8b8ac;
   cursor: not-allowed;

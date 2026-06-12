@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
+import Footer from './components/Footer';
 import './css/index.css';
 import './css/layout.css';
 import Home from './pages/Home';
@@ -9,6 +10,7 @@ import Login from './pages/Login';
 import ProductList from './pages/ProductList';
 import AdminProductAdd from './pages/AdminProductAdd';
 import AdminProductList from './pages/AdminProductList';
+import AdminDashboard from './pages/AdminDashboard';
 import ProductDetail from './pages/ProductDetail';
 import MyPage from './pages/MyPage';
 import Cart from './pages/Cart';
@@ -34,6 +36,7 @@ function App() {
             <Route element={<BoxedLayout />}>
               <Route path="/signup" element={<Signup />} />
               <Route path="/products" element={<ProductList />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/product/add" element={<AdminProductAdd />} />
               <Route path="/admin/products" element={<AdminProductList />} />
               <Route path="/products/:id" element={<ProductDetail />} />
@@ -42,6 +45,7 @@ function App() {
             </Route>
           </Routes>
         </main>
+        <Footer />
       </div>
     </BrowserRouter>
   );
