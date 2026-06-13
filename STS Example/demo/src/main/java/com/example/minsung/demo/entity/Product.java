@@ -25,6 +25,12 @@ public class Product {
     @Column(nullable = false)
     private int price;
 
+    @Column
+    private Integer originalPrice;
+
+    @Column
+    private Integer discountPercent;
+
     @Column(nullable = false)
     private int stock;
 

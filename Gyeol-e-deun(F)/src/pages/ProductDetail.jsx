@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiClient, api, getAccessToken } from '../utils/api';
 import { addToCart } from '../utils/cart';
@@ -23,6 +23,16 @@ function formatDate(dateString) {
   });
 }
 
+function getPricing(product) {
+  const originalPrice = product.originalPrice ?? product.price;
+  return {
+    originalPrice,
+    currentPrice: product.price,
+    isDiscounted: originalPrice > product.price,
+    discountPercent: product.discountPercent,
+  };
+}
+
 function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -31,6 +41,7 @@ function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setProduct(null);
     setError(null);
     setQuantity(1);
@@ -46,14 +57,14 @@ function ProductDetail() {
             productId: prod.productId,
             productName: prod.name,
             primaryImageUrl: prod.thumbnailUrl,
-            price: prod.price
+            price: prod.price,
           },
-          ...recent.filter(item => item.productId !== prod.productId)
+          ...recent.filter((item) => item.productId !== prod.productId),
         ].slice(0, 5);
         localStorage.setItem('recentlyViewed', JSON.stringify(updatedRecent));
       })
       .catch((err) => {
-        console.error('물품 정보를 가져오지 못했습니다:', err);
+        console.error('상품 정보를 가져오지 못했습니다.', err);
         setError('상품 정보를 불러오지 못했습니다.');
       });
   }, [id]);
@@ -63,19 +74,31 @@ function ProductDetail() {
       <main className="main-container detail-page">
         <p className="detail-error">{error}</p>
         <button type="button" className="btn-back" onClick={() => navigate('/products')}>
-          ← 상품 목록으로
+          상품 목록으로
         </button>
       </main>
     );
   }
 
   if (!product) {
-    return <div className="loading-text">나눔의 숨결을 들이고 있습니다... 🌱</div>;
+    return <div className="loading-text">상품 정보를 불러오는 중입니다...</div>;
+  }
+
+  if (product.status === 'HIDDEN') {
+    return (
+      <main className="main-container detail-page">
+        <p className="detail-error">현재 노출되지 않는 상품입니다.</p>
+        <button type="button" className="btn-back" onClick={() => navigate('/products')}>
+          상품 목록으로
+        </button>
+      </main>
+    );
   }
 
   const statusLabel = STATUS_LABEL[product.status] || product.status;
   const isSoldOut = product.status === 'SOLD_OUT';
   const thumbnailImages = getThumbnailUrls(product);
+  const pricing = getPricing(product);
 
   const handleAddToCart = async () => {
     const token = getAccessToken();
@@ -92,7 +115,7 @@ function ProductDetail() {
 
     try {
       const message = await addToCart({ productId: product.productId, count: quantity }, token);
-      alert(message || '장바구니에 상품을 안전하게 담았습니다.');
+      alert(message || '장바구니에 상품을 담았습니다.');
       if (window.confirm('장바구니로 이동하시겠습니까?')) {
         navigate('/cart');
       }
@@ -110,7 +133,7 @@ function ProductDetail() {
   return (
     <main className="main-container detail-page">
       <button type="button" className="btn-back" onClick={() => navigate('/products')}>
-        ← 상품 목록으로
+        상품 목록으로
       </button>
 
       <div className="detail-content">
@@ -124,7 +147,7 @@ function ProductDetail() {
 
           {product.detailImageUrl && (
             <div className="detail-image-box detail-image-secondary">
-              <img src={product.detailImageUrl} alt={`${product.name} 상세 소개`} />
+              <img src={product.detailImageUrl} alt={`${product.name} 상세 설명`} />
             </div>
           )}
         </div>
@@ -139,7 +162,17 @@ function ProductDetail() {
           </div>
 
           <div className="detail-price-box">
-            <span className="price">{product.price.toLocaleString()}원</span>
+            <div className="detail-price-wrap">
+              {pricing.isDiscounted ? (
+                <>
+                  <span className="detail-price-original">{pricing.originalPrice.toLocaleString()}원</span>
+                  <span className="price price-sale">{pricing.currentPrice.toLocaleString()}원</span>
+                  {pricing.discountPercent ? <span className="discount-badge">-{pricing.discountPercent}%</span> : null}
+                </>
+              ) : (
+                <span className="price">{pricing.currentPrice.toLocaleString()}원</span>
+              )}
+            </div>
           </div>
 
           <section className="detail-section">
@@ -174,7 +207,7 @@ function ProductDetail() {
             disabled={isSoldOut || product.stock <= 0}
             onClick={handleAddToCart}
           >
-            {isSoldOut || product.stock <= 0 ? '품절된 물품입니다' : '바구니에 담기 🌿'}
+            {isSoldOut || product.stock <= 0 ? '품절된 상품입니다' : '장바구니에 담기'}
           </button>
         </div>
       </div>

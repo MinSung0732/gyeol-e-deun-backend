@@ -10,6 +10,8 @@ public class ProductResponseDto {
     private Long productId;
     private String name;
     private int price;
+    private Integer originalPrice;
+    private Integer discountPercent;
     private int stock;
     private String description;
     private String status;
@@ -24,6 +26,8 @@ public class ProductResponseDto {
         this.productId = product.getProductId();
         this.name = product.getName();
         this.price = product.getPrice();
+        this.originalPrice = product.getOriginalPrice() != null ? product.getOriginalPrice() : product.getPrice();
+        this.discountPercent = product.getDiscountPercent() != null ? product.getDiscountPercent() : 0;
         this.stock = product.getStock();
         this.description = product.getDescription();
         this.status = product.getStatus();
@@ -48,6 +52,8 @@ public class ProductResponseDto {
     public Long getProductId() { return productId; }
     public String getName() { return name; }
     public int getPrice() { return price; }
+    public Integer getOriginalPrice() { return originalPrice; }
+    public Integer getDiscountPercent() { return discountPercent; }
     public int getStock() { return stock; }
     public String getDescription() { return description; }
     public String getStatus() { return status; }

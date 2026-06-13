@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell
+  PieChart, Pie, Cell
 } from 'recharts';
 import '../css/admin-dashboard.css';
 
@@ -37,16 +35,10 @@ const RECENT_TRANSACTIONS = [
 ];
 
 function AdminDashboard() {
-  const navigate = useNavigate();
-
   return (
     <div className="admin-dashboard-container">
       <div className="dashboard-header">
         <h2>관리자 대시보드 🪴</h2>
-        <div className="dashboard-actions">
-          <button className="btn-primary" onClick={() => navigate('/admin/products')}>상품 관리</button>
-          <button className="btn-secondary" onClick={() => navigate('/admin/product/add')}>상품 등록</button>
-        </div>
       </div>
 
       <div className="summary-cards">

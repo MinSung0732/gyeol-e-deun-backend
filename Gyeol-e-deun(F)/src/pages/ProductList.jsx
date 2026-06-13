@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient, api, authHeaders, getAccessToken } from '../utils/api';
 import { addToCart } from '../utils/cart';
@@ -12,25 +12,17 @@ function ProductList() {
   const [expandedMajors, setExpandedMajors] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Layout state: '4x4' (16), '4x5' (20), '5x5' (25)
   const [gridLayout, setGridLayout] = useState('5x5');
-  
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  
+  const navigate = useNavigate();
+
   const itemsPerPage = useMemo(() => {
     if (gridLayout === '4x4') return 16;
     if (gridLayout === '4x5') return 20;
-    return 25; // '5x5'
+    return 25;
   }, [gridLayout]);
 
-  const gridColumns = useMemo(() => {
-    if (gridLayout === '5x5') return 5;
-    return 4; // '4x4' and '4x5'
-  }, [gridLayout]);
-
-  const navigate = useNavigate();
+  const gridColumns = useMemo(() => (gridLayout === '5x5' ? 5 : 4), [gridLayout]);
 
   useEffect(() => {
     apiClient.get(api.products.list)
@@ -39,7 +31,7 @@ function ProductList() {
         setIsLoading(false);
       })
       .catch((error) => {
-        console.error('상품을 가져오는 중 오류 발생:', error);
+        console.error('상품 목록 로드 실패:', error);
         setIsLoading(false);
       });
 
@@ -56,7 +48,7 @@ function ProductList() {
         .then((response) => {
           setWishlist(response.data.map((item) => item.productId));
         })
-        .catch((error) => console.error('찜 목록 조회 실패:', error));
+        .catch((error) => console.error('위시리스트 조회 실패:', error));
     }
   }, []);
 
@@ -92,12 +84,8 @@ function ProductList() {
   };
 
   const categoryMatches = (value, category) => {
-    if (!category) {
-      return true;
-    }
-    if (!value) {
-      return false;
-    }
+    if (!category) return true;
+    if (!value) return false;
 
     const normalized = value.trim();
     if (category.parentId == null) {
@@ -115,130 +103,87 @@ function ProductList() {
         normalized.endsWith(category.name)
       );
     }
+
     return normalized === category.name;
   };
 
+  const getPricing = (product) => {
+    const originalPrice = product.originalPrice ?? product.price;
+    const isDiscounted = originalPrice > product.price;
+    return {
+      originalPrice,
+      currentPrice: product.price,
+      isDiscounted,
+      discountPercent: product.discountPercent,
+    };
+  };
+
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => categoryMatches(product.category, selectedCategory));
+    if (!selectedCategory) {
+      return products.filter((product) => product.status !== 'HIDDEN');
+    }
+    return products.filter(
+      (product) => product.status !== 'HIDDEN' && categoryMatches(product.category, selectedCategory),
+    );
   }, [products, selectedCategory]);
 
-  // Reset page when category or layout changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentPage(1);
   }, [selectedCategoryId, gridLayout]);
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const currentProducts = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredProducts.slice(start, start + itemsPerPage);
-  }, [filteredProducts, currentPage, itemsPerPage]);
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / itemsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * itemsPerPage;
+  const currentProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const renderPagination = () => {
-    if (totalPages <= 1) return null;
-
-    const pages = [];
-    for (let i = 1; i <= totalPages; i++) {
-      pages.push(
-        <button
-          key={i}
-          className={`page-btn ${currentPage === i ? 'active' : ''}`}
-          onClick={() => handlePageChange(i)}
-        >
-          {i}
-        </button>
-      );
-    }
-
-    return (
-      <div className="pagination-block">
-        <button
-          className="page-btn nav-btn"
-          disabled={currentPage === 1}
-          onClick={() => handlePageChange(currentPage - 1)}
-        >
-          &lt;
-        </button>
-        {pages}
-        <button
-          className="page-btn nav-btn"
-          disabled={currentPage === totalPages}
-          onClick={() => handlePageChange(currentPage + 1)}
-        >
-          &gt;
-        </button>
-      </div>
-    );
-  };
-
-  const handleToggleWishlist = (e, productId) => {
+  const handleToggleWishlist = async (e, productId) => {
     e.stopPropagation();
-
     const token = getAccessToken();
     if (!token) {
       alert('로그인이 필요합니다.');
       navigate('/login');
-      return;
-    }
-
-    apiClient.post(api.wishlist.toggle(productId), {}, { headers: authHeaders(token) })
-      .then((response) => {
-        const isAdded = response.data.isAdded;
-        setWishlist((prev) => (
-          isAdded ? [...prev, productId] : prev.filter((id) => id !== productId)
-        ));
-      })
-      .catch((error) => {
-        console.error('찜하기 실패:', error);
-        alert('찜하기 처리에 실패했습니다.');
-      });
-  };
-
-  const handleAddToCart = async (e, product) => {
-    e.stopPropagation();
-
-    const token = getAccessToken();
-    if (!token) {
-      alert('로그인이 필요합니다.');
-      navigate('/login');
-      return;
-    }
-
-    if (product.stock <= 0) {
-      alert(`재고가 부족합니다. (현재 재고: ${product.stock}개)`);
       return;
     }
 
     try {
-      await addToCart({ productId: product.productId, count: 1 }, token);
-      if (window.confirm('상품추가완료했습니다. 장바구니로 이동하시겠습니까?')) {
-        navigate('/cart');
-      }
+      await apiClient.post(api.wishlist.toggle(productId), {}, { headers: authHeaders(token) });
+      setWishlist((prev) => (
+        prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]
+      ));
+    } catch (error) {
+      console.error('위시리스트 처리 실패:', error);
+      alert('위시리스트 처리 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleAddToCart = async (e, product) => {
+    e.stopPropagation();
+    const token = getAccessToken();
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const message = await addToCart({ productId: product.productId, count: 1 }, token);
+      alert(message || '장바구니에 담았습니다.');
     } catch (err) {
-      console.error('장바구니 담기 오류:', err);
-      if (err.response?.status === 401) {
-        alert('로그인이 필요합니다.');
-        navigate('/login');
-      } else {
-        alert(typeof err.response?.data === 'string' ? err.response.data : '장바구니 담기에 실패했습니다.');
-      }
+      console.error('장바구니 추가 실패:', err);
+      alert(typeof err.response?.data === 'string' ? err.response.data : '장바구니 추가에 실패했습니다.');
     }
   };
 
   if (isLoading) {
-    return <div className="loading-text">결이든의 건강한 상품들을 불러오는 중입니다... 🌱</div>;
+    return <div className="loading-text">상품을 불러오는 중입니다...</div>;
   }
 
   return (
-    <main className="main-container">
+    <main className="main-container product-list-page">
       <section className="page-banner">
         <span className="page-banner-tag">Healthy Choices</span>
-        <h2>자연을 담은 건강한 선택, 결이든 🌱</h2>
+        <h2>자연을 담은 건강한 선택, 결이든</h2>
         <p>우리 가족이 안심하고 사용할 수 있는 바른 상품들을 만나보세요.</p>
       </section>
 
@@ -248,7 +193,10 @@ function ProductList() {
           <button
             type="button"
             className={`category-link ${selectedCategoryId === null ? 'active' : ''}`}
-            onClick={() => { setSelectedCategoryId(null); setExpandedMajors([]); }}
+            onClick={() => {
+              setSelectedCategoryId(null);
+              setExpandedMajors([]);
+            }}
           >
             전체보기
           </button>
@@ -270,7 +218,9 @@ function ProductList() {
                       setSelectedCategoryId(root.id);
                       if (hasChildren) {
                         setExpandedMajors((prev) => (
-                          prev.includes(root.id) ? prev.filter((id) => id !== root.id) : [...prev, root.id]
+                          prev.includes(root.id)
+                            ? prev.filter((id) => id !== root.id)
+                            : [...prev, root.id]
                         ));
                       } else {
                         setExpandedMajors((prev) => prev.filter((id) => id !== root.id));
@@ -280,7 +230,7 @@ function ProductList() {
                     {root.name}
                     {hasChildren && (
                       <span className={`chevron ${isExpanded ? 'open' : ''}`} style={{ marginLeft: 8 }}>
-                        {isExpanded ? '▾' : '▸'}
+                        {isExpanded ? 'v' : '>'}
                       </span>
                     )}
                   </button>
@@ -310,30 +260,34 @@ function ProductList() {
             <div className="header-left">
               <h3>추천 상품</h3>
               {selectedCategory && (
-                <p className="selected-category-label">{selectedCategory.parentName ? `${selectedCategory.parentName} > ${selectedCategory.name}` : selectedCategory.name} 선택중</p>
+                <p className="selected-category-label">
+                  {selectedCategory.parentName ? `${selectedCategory.parentName} > ${selectedCategory.name}` : selectedCategory.name}
+                  {' '}
+                  선택중
+                </p>
               )}
             </div>
             <div className="layout-controls">
-              <button 
-                className={`layout-btn ${gridLayout === '4x4' ? 'active' : ''}`} 
+              <button
+                className={`layout-btn ${gridLayout === '4x4' ? 'active' : ''}`}
                 onClick={() => setGridLayout('4x4')}
                 title="4x4 배열 (16개)"
               >
-                ▤
+                4x4
               </button>
-              <button 
-                className={`layout-btn ${gridLayout === '4x5' ? 'active' : ''}`} 
+              <button
+                className={`layout-btn ${gridLayout === '4x5' ? 'active' : ''}`}
                 onClick={() => setGridLayout('4x5')}
                 title="4x5 배열 (20개)"
               >
-                ▦
+                4x5
               </button>
-              <button 
-                className={`layout-btn ${gridLayout === '5x5' ? 'active' : ''}`} 
+              <button
+                className={`layout-btn ${gridLayout === '5x5' ? 'active' : ''}`}
                 onClick={() => setGridLayout('5x5')}
                 title="5x5 배열 (25개)"
               >
-                ▦
+                5x5
               </button>
             </div>
           </div>
@@ -345,46 +299,89 @@ function ProductList() {
           ) : (
             <>
               <div className="product-grid" style={{ gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))` }}>
-                {currentProducts.map((product) => (
-                  <div
-                    className="product-card"
-                    key={product.productId}
-                    onClick={() => navigate(`/products/${product.productId}`)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className="thumbnail-box">
-                      <img src={getPrimaryThumbnail(product)} alt={product.name} />
-                      <button
-                        type="button"
-                        className="btn-wishlist"
-                        onClick={(e) => handleToggleWishlist(e, product.productId)}
-                        title={wishlist.includes(product.productId) ? '찜 해제' : '찜하기'}
-                      >
-                        {wishlist.includes(product.productId) ? '❤️' : '🤍'}
-                      </button>
-                      {product.status === 'SOLD_OUT' && <span className="badge sold-out">품절</span>}
-                    </div>
-
-                    <div className="product-info">
-                      {product.category && <span className="product-category">{product.category}</span>}
-                      <h4 className="product-name">{product.name}</h4>
-                      <p className="product-desc">{product.description}</p>
-                      <div className="product-bottom">
-                        <span className="product-price">{product.price.toLocaleString()}원</span>
+                {currentProducts.map((product) => {
+                  const pricing = getPricing(product);
+                  return (
+                    <div
+                      className="product-card"
+                      key={product.productId}
+                      onClick={() => navigate(`/products/${product.productId}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="thumbnail-box">
+                        <img src={getPrimaryThumbnail(product)} alt={product.name} />
                         <button
                           type="button"
-                          className="btn-cart"
-                          disabled={product.status === 'SOLD_OUT' || product.stock <= 0}
-                          onClick={(e) => handleAddToCart(e, product)}
+                          className="btn-wishlist"
+                          onClick={(e) => handleToggleWishlist(e, product.productId)}
+                          title={wishlist.includes(product.productId) ? '위시리스트 해제' : '위시리스트 추가'}
                         >
-                          담기
+                          {wishlist.includes(product.productId) ? '♥' : '♡'}
                         </button>
+                        {product.status === 'SOLD_OUT' && <span className="badge sold-out">품절</span>}
+                        {pricing.isDiscounted && pricing.discountPercent && (
+                          <span className="badge discount">-{pricing.discountPercent}%</span>
+                        )}
+                      </div>
+
+                      <div className="product-info">
+                        {product.category && <span className="product-category">{product.category}</span>}
+                        <h4 className="product-name">{product.name}</h4>
+                        <p className="product-desc">{product.description}</p>
+                        <div className="product-bottom">
+                          <div className="product-price-wrap">
+                            {pricing.isDiscounted ? (
+                              <>
+                                <span className="price-original">{pricing.originalPrice.toLocaleString()}원</span>
+                                <span className="product-price price-sale">{pricing.currentPrice.toLocaleString()}원</span>
+                              </>
+                            ) : (
+                              <span className="product-price">{pricing.currentPrice.toLocaleString()}원</span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            className="btn-cart"
+                            disabled={product.status === 'SOLD_OUT' || product.stock <= 0}
+                            onClick={(e) => handleAddToCart(e, product)}
+                          >
+                            담기
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-              {renderPagination()}
+
+              <div className="pagination-block">
+                <button
+                  type="button"
+                  className="page-btn"
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={safeCurrentPage === 1}
+                >
+                  이전
+                </button>
+                {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    className={`page-btn ${safeCurrentPage === pageNum ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="page-btn"
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={safeCurrentPage === totalPages}
+                >
+                  다음
+                </button>
+              </div>
             </>
           )}
         </div>
