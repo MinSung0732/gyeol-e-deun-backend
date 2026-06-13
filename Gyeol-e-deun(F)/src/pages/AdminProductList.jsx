@@ -6,16 +6,23 @@ import '../css/admin.css';
 const LOW_STOCK_THRESHOLD = 5;
 const LOW_STOCK_PREVIEW_LIMIT = 4;
 
+function formatDateTime(value) {
+  if (!value) return '-';
+  return new Date(value).toLocaleString('ko-KR');
+}
+
 function AdminProductList() {
   const hasToken = Boolean(getAccessToken());
   const [isAdmin, setIsAdmin] = useState(hasToken ? null : false);
   const [authChecked, setAuthChecked] = useState(!hasToken);
   const [products, setProducts] = useState([]);
+  const [trashProducts, setTrashProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [isTrashView, setIsTrashView] = useState(false);
   const [expandedCategoryIds, setExpandedCategoryIds] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [lowStockOnly, setLowStockOnly] = useState(false);
+  const [stockStatusFilter, setStockStatusFilter] = useState('ALL');
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [page, setPage] = useState(0);
   const [pageSize] = useState(40);
@@ -74,6 +81,22 @@ function AdminProductList() {
     }
   }, [pageSize]);
 
+  const loadTrashProducts = useCallback(async () => {
+    const token = getAccessToken();
+    if (!token) {
+      return;
+    }
+
+    try {
+      const response = await apiClient.get(api.admin.productTrash, {
+        headers: authHeaders(token),
+      });
+      setTrashProducts(Array.isArray(response.data) ? response.data : []);
+    } catch (loadError) {
+      console.error('휴지통 상품 목록 로드 실패:', loadError);
+    }
+  }, []);
+
   useEffect(() => {
     const token = getAccessToken();
     if (!token) {
@@ -88,6 +111,7 @@ function AdminProductList() {
         if (adminFlag) {
           loadCategories();
           loadProducts();
+          loadTrashProducts();
         } else {
           setError('관리자 권한이 필요합니다.');
         }
@@ -97,7 +121,7 @@ function AdminProductList() {
         setError('관리자 인증에 실패했습니다.');
         setIsLoading(false);
       });
-  }, [loadCategories, loadProducts]);
+  }, [loadCategories, loadProducts, loadTrashProducts]);
 
   const flattenedCategories = useMemo(() => {
     const result = [];
@@ -154,16 +178,21 @@ function AdminProductList() {
   };
 
   const normalizedSearch = searchQuery.trim().toLowerCase();
+  const sourceProducts = isTrashView ? trashProducts : products;
   const filteredProducts = useMemo(() => (
-    products.filter((product) => {
-      const categoryOk = categoryMatches(product.category, selectedCategory);
+    sourceProducts.filter((product) => {
+      const categoryOk = isTrashView || categoryMatches(product.category, selectedCategory);
       const searchOk = !normalizedSearch
         || String(product.productId).includes(normalizedSearch)
         || (product.name || '').toLowerCase().includes(normalizedSearch);
-      const stockOk = !lowStockOnly || Number(product.stock ?? 0) <= LOW_STOCK_THRESHOLD;
-      return categoryOk && searchOk && stockOk;
+      const statusOk = isTrashView
+        || stockStatusFilter === 'ALL'
+        || (stockStatusFilter === 'SOLD_OUT' && (product.status === 'SOLD_OUT' || Number(product.stock ?? 0) === 0))
+        || (stockStatusFilter === 'HIDDEN' && product.status === 'HIDDEN')
+        || (stockStatusFilter === 'LOW_STOCK' && Number(product.stock ?? 0) <= LOW_STOCK_THRESHOLD);
+      return categoryOk && searchOk && statusOk;
     })
-  ), [products, selectedCategory, normalizedSearch, lowStockOnly]);
+  ), [sourceProducts, isTrashView, selectedCategory, normalizedSearch, stockStatusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
   const safePage = Math.min(page, totalPages - 1);
@@ -184,6 +213,7 @@ function AdminProductList() {
   const hiddenLowStockCount = Math.max(0, lowStockProducts.length - LOW_STOCK_PREVIEW_LIMIT);
 
   const selectCategory = (categoryId, shouldToggleExpand = false) => {
+    setIsTrashView(false);
     setSelectedCategoryId(categoryId);
     setPage(0);
     setSelectedIds(new Set());
@@ -197,6 +227,7 @@ function AdminProductList() {
   };
 
   const selectAllCategories = () => {
+    setIsTrashView(false);
     setSelectedCategoryId(null);
     setExpandedCategoryIds(
       rootCategories
@@ -205,6 +236,14 @@ function AdminProductList() {
     );
     setPage(0);
     setSelectedIds(new Set());
+  };
+
+  const selectTrash = () => {
+    setIsTrashView(true);
+    setSelectedCategoryId(null);
+    setPage(0);
+    setSelectedIds(new Set());
+    loadTrashProducts();
   };
 
   const toggleSelect = (productId) => {
@@ -243,6 +282,52 @@ function AdminProductList() {
     const requestBody = {
       productIds: Array.from(selectedIds),
     };
+
+    if (actionType === 'restore_deleted') {
+      setIsSubmitting(true);
+      setError(null);
+      try {
+        await apiClient.patch(api.admin.restoreProductTrash, requestBody, {
+          headers: authHeaders(token),
+        });
+        setSelectedIds(new Set());
+        await loadProducts();
+        await loadTrashProducts();
+        alert('선택한 상품이 복구되었습니다.');
+      } catch (restoreError) {
+        console.error('휴지통 상품 복구 오류:', restoreError);
+        setError('상품 복구 중 오류가 발생했습니다. 삭제 후 7일이 지났는지 확인해 주세요.');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (actionType === 'delete') {
+      const ok = window.confirm(`선택한 상품 ${selectedIds.size}개를 삭제하시겠습니까? 삭제 후 되돌릴 수 없습니다.`);
+      if (!ok) {
+        return;
+      }
+
+      setIsSubmitting(true);
+      setError(null);
+      try {
+        await apiClient.delete(api.admin.bulkProducts, {
+          headers: authHeaders(token),
+          data: requestBody,
+        });
+        setSelectedIds(new Set());
+        await loadProducts();
+        await loadTrashProducts();
+        alert('선택한 상품이 휴지통으로 이동되었습니다.');
+      } catch (deleteError) {
+        console.error('관리자 상품 삭제 오류:', deleteError);
+        setError('상품 삭제 중 오류가 발생했습니다.');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
 
     if (actionType === 'discount') {
       const percent = Number(discountPercent);
@@ -419,7 +504,7 @@ function AdminProductList() {
           <div className="admin-sidebar-title">카테고리</div>
           <button
             type="button"
-            className={`admin-category-link ${selectedCategoryId === null ? 'active' : ''}`}
+            className={`admin-category-link ${!isTrashView && selectedCategoryId === null ? 'active' : ''}`}
             onClick={selectAllCategories}
           >
             전체 상품
@@ -464,6 +549,18 @@ function AdminProductList() {
               );
             })
           )}
+
+          <div className="admin-trash-nav">
+            <button
+              type="button"
+              className={`admin-category-link admin-trash-link ${isTrashView ? 'active' : ''}`}
+              onClick={selectTrash}
+            >
+              <span>휴지통</span>
+              <span className="admin-trash-count">{trashProducts.length}</span>
+            </button>
+            <p>삭제 후 7일 이내 복구 가능</p>
+          </div>
         </aside>
 
         <section className="admin-product-main">
@@ -481,18 +578,22 @@ function AdminProductList() {
                 }}
                 placeholder="상품 ID 또는 제품명"
               />
-              <label className="admin-stock-filter-check">
-                <input
-                  type="checkbox"
-                  checked={lowStockOnly}
-                  onChange={(e) => {
-                    setLowStockOnly(e.target.checked);
-                    setPage(0);
-                    setSelectedIds(new Set());
-                  }}
-                />
-                <span>재고 임박 상품만 보기</span>
-              </label>
+              <select
+                className="admin-stock-status-filter"
+                value={stockStatusFilter}
+                onChange={(e) => {
+                  setStockStatusFilter(e.target.value);
+                  setPage(0);
+                  setSelectedIds(new Set());
+                }}
+                disabled={isTrashView}
+                aria-label="상품 상태 필터"
+              >
+                <option value="ALL">전체</option>
+                <option value="SOLD_OUT">품절</option>
+                <option value="HIDDEN">숨김</option>
+                <option value="LOW_STOCK">재고임박</option>
+              </select>
               <button
                 type="button"
                 className="btn-submit-nature btn-small btn-secondary"
@@ -507,6 +608,22 @@ function AdminProductList() {
               </button>
             </div>
 
+            {isTrashView ? (
+              <div className="admin-action-bar admin-trash-action-bar">
+                <div className="action-group">
+                  <span className="action-label">휴지통 작업</span>
+                  <button
+                    type="button"
+                    className="btn-submit-nature btn-small"
+                    onClick={() => handleBulkAction('restore_deleted')}
+                    disabled={isSubmitting}
+                  >
+                    선택 복구
+                  </button>
+                </div>
+                <p className="admin-trash-help">삭제된 상품은 7일 동안 보관되며, 기간이 지나면 자동으로 완전 삭제됩니다.</p>
+              </div>
+            ) : (
             <div className="admin-action-bar">
               <div className="action-group">
                 <label className="action-label">원가 수정</label>
@@ -604,13 +721,22 @@ function AdminProductList() {
                 >
                   숨김 취소
                 </button>
+                <button
+                  type="button"
+                  className="btn-submit-nature btn-small btn-danger"
+                  onClick={() => handleBulkAction('delete')}
+                  disabled={isSubmitting}
+                >
+                  선택 삭제
+                </button>
               </div>
             </div>
+            )}
           </div>
 
           {error && <p className="admin-error-text">{error}</p>}
 
-          {lowStockProducts.length > 0 && (
+          {!isTrashView && lowStockProducts.length > 0 && (
             <section className={`admin-low-stock-alert ${lowStockExpanded ? 'expanded' : 'collapsed'}`} aria-live="polite">
               <button
                 type="button"
@@ -677,16 +803,20 @@ function AdminProductList() {
                   <th>할인율</th>
                   <th>재고</th>
                   <th>상태</th>
+                  {isTrashView && <th>삭제일</th>}
+                  {isTrashView && <th>복구 가능 기한</th>}
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan="8" className="table-loading">상품 목록을 불러오는 중입니다...</td>
+                    <td colSpan={isTrashView ? 10 : 8} className="table-loading">상품 목록을 불러오는 중입니다...</td>
                   </tr>
                 ) : currentProducts.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="table-empty">검색 결과가 없습니다.</td>
+                    <td colSpan={isTrashView ? 10 : 8} className="table-empty">
+                      {isTrashView ? '휴지통에 상품이 없습니다.' : '검색 결과가 없습니다.'}
+                    </td>
                   </tr>
                 ) : (
                   currentProducts.map((product) => (
@@ -710,6 +840,8 @@ function AdminProductList() {
                       <td>{renderDiscount(product)}</td>
                       <td>{renderStock(product)}</td>
                       <td>{getStatusLabel(product)}</td>
+                      {isTrashView && <td>{formatDateTime(product.deletedAt)}</td>}
+                      {isTrashView && <td>{formatDateTime(product.recoverableUntil)}</td>}
                     </tr>
                   ))
                 )}
@@ -737,7 +869,9 @@ function AdminProductList() {
             </button>
           </div>
 
-          <p className="admin-footnote">선택된 상품: {displayedCount}개 / 검색 결과: {filteredProducts.length}개</p>
+          <p className="admin-footnote">
+            선택된 상품: {displayedCount}개 / {isTrashView ? '휴지통 상품' : '검색 결과'}: {filteredProducts.length}개
+          </p>
         </section>
       </div>
     </div>

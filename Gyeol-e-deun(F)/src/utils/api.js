@@ -23,6 +23,8 @@ export const api = {
   products: {
     list: '/api/products',
     detail: (id) => `/api/products/${id}`,
+    view: (id) => `/api/products/${id}/view`,
+    searchStat: '/api/products/search-stat',
   },
   categories: {
     list: '/api/categories',
@@ -33,6 +35,9 @@ export const api = {
     products: '/api/admin/products',
     upload: '/api/admin/upload',
     bulkProducts: '/api/admin/products/bulk',
+    productTrash: '/api/admin/products/trash',
+    restoreProductTrash: '/api/admin/products/trash/restore',
+    productSummary: '/api/admin/products/summary',
     members: '/api/admin/members',
     memberMemo: (memberId) => `/api/admin/members/${memberId}/memo`,
     memberBenefits: (memberId) => `/api/admin/members/${memberId}/benefits`,

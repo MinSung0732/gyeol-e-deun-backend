@@ -6,6 +6,9 @@ import ImageCarousel from '../components/ImageCarousel';
 import { getThumbnailUrls } from '../utils/productImages';
 import '../css/main.css';
 
+const productViewRecordTimes = new Map();
+const VIEW_RECORD_COOLDOWN_MS = 1000;
+
 const STATUS_LABEL = {
   ON_SALE: '판매중',
   SOLD_OUT: '품절',
@@ -50,6 +53,16 @@ function ProductDetail() {
       .then((response) => {
         const prod = response.data;
         setProduct(prod);
+
+        const now = Date.now();
+        const lastRecordedAt = productViewRecordTimes.get(prod.productId) || 0;
+        if (now - lastRecordedAt > VIEW_RECORD_COOLDOWN_MS) {
+          productViewRecordTimes.set(prod.productId, now);
+          apiClient.post(api.products.view(prod.productId)).catch((viewError) => {
+            productViewRecordTimes.delete(prod.productId);
+            console.error('상품 조회수 기록 실패:', viewError);
+          });
+        }
 
         const recent = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
         const updatedRecent = [

@@ -95,6 +95,41 @@
   text-align: center;
 }
 
+.admin-trash-nav {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #dbe3dc;
+}
+
+.admin-trash-link {
+  color: #9f2f2f;
+}
+
+.admin-trash-link.active {
+  background-color: #c62828;
+  color: #ffffff;
+}
+
+.admin-trash-count {
+  min-width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(198, 40, 40, 0.12);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-trash-nav p {
+  margin-top: 8px;
+  color: #8a6f6f;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .admin-product-main {
   min-width: 0;
 }
@@ -129,11 +164,8 @@
   border-color: #799a82;
 }
 
-.admin-stock-filter-check {
+.admin-stock-status-filter {
   min-height: 42px;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
   padding: 0 12px;
   border: 1px solid #dbe3dc;
   border-radius: 8px;
@@ -141,11 +173,13 @@
   color: #3a4a3e;
   font-size: 14px;
   font-weight: 700;
-  white-space: nowrap;
+  cursor: pointer;
 }
 
-.admin-stock-filter-check input {
-  margin: 0;
+.admin-stock-status-filter:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  background-color: #f3f5f3;
 }
 
 .admin-price-stack {
@@ -779,6 +813,14 @@
   background-color: #d6e0d4;
 }
 
+.btn-danger {
+  background-color: #c62828;
+  color: #ffffff;
+}
+.btn-danger:hover:not(:disabled) {
+  background-color: #a91f1f;
+}
+
 .admin-action-bar {
   display: flex;
   flex-wrap: wrap;
@@ -796,6 +838,18 @@
   font-weight: 600;
   color: #3a4a3e;
 }
+
+.admin-trash-action-bar {
+  align-items: center;
+}
+
+.admin-trash-help {
+  margin: 0;
+  color: #8a6f6f;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .admin-action-bar input[type="number"] {
   width: 90px;
   padding: 10px 12px;

@@ -61,5 +61,7 @@ public class Product {
     @UpdateTimestamp // 상품 정보 마지막 수정일 (가격 바꿀 때 기록용)
     private LocalDateTime updatedAt;
 
+    private LocalDateTime deletedAt;
+
     // Getter & Setter (생략)
 }

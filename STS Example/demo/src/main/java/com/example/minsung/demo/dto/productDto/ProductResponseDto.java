@@ -21,6 +21,8 @@ public class ProductResponseDto {
     private String category;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime deletedAt;
+    private LocalDateTime recoverableUntil;
 
     public ProductResponseDto(Product product) {
         this.productId = product.getProductId();
@@ -37,6 +39,8 @@ public class ProductResponseDto {
         this.category = product.getCategory();
         this.createdAt = product.getCreatedAt();
         this.updatedAt = product.getUpdatedAt();
+        this.deletedAt = product.getDeletedAt();
+        this.recoverableUntil = product.getDeletedAt() == null ? null : product.getDeletedAt().plusDays(7);
     }
 
     private List<String> resolveThumbnailUrls(Product product) {
@@ -63,4 +67,6 @@ public class ProductResponseDto {
     public String getCategory() { return category; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public LocalDateTime getRecoverableUntil() { return recoverableUntil; }
 }

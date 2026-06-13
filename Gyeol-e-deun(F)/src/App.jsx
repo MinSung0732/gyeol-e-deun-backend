@@ -9,7 +9,9 @@ import Login from './pages/Login';
 import ProductList from './pages/ProductList';
 import AdminProductAdd from './pages/AdminProductAdd';
 import AdminProductList from './pages/AdminProductList';
+import AdminProductSummary from './pages/AdminProductSummary';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminMonthlySales from './pages/AdminMonthlySales';
 import AdminOrderManagement from './pages/AdminOrderManagement';
 import AdminCustomerCrm from './pages/AdminCustomerCrm';
 import AdminCsBoardManagement from './pages/AdminCsBoardManagement';
@@ -41,11 +43,13 @@ function AppContent() {
           <Route path="/admin" element={<AdminShell />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="dashboard/monthly-sales" element={<AdminMonthlySales />} />
             <Route path="orders" element={<AdminOrderManagement />} />
             <Route path="customers" element={<AdminCustomerCrm />} />
             <Route path="cs-board" element={<AdminCsBoardManagement />} />
             <Route path="products" element={<AdminProductList />} />
             <Route path="products/add" element={<AdminProductAdd />} />
+            <Route path="products/summary" element={<AdminProductSummary />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Route>
 
