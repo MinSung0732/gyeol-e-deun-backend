@@ -2,13 +2,17 @@ package com.example.minsung.demo.service.memberService;
 
 import com.example.minsung.demo.dto.memberDto.MemberLoginRequestDto;
 import com.example.minsung.demo.dto.memberDto.MemberRegisterRequestDto;
+import com.example.minsung.demo.dto.memberDto.AdminMemberResponseDto;
 import com.example.minsung.demo.util.JwtUtil;
 import com.example.minsung.demo.entity.Member;
 import com.example.minsung.demo.repository.MemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // 암호화 도구 임포트
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class MemberService {
@@ -63,6 +67,9 @@ public class MemberService {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
+        member.setLastLoginAt(LocalDateTime.now());
+        memberRepository.save(member);
+
         // 3. 출입증(JWT) 발급 (토큰 안에는 보통 변하지 않는 고유 정보인 email이나 loginId를 넣습니다)
         return jwtUtil.generateToken(member.getLoginId(), member.getRole());
     }
@@ -72,5 +79,38 @@ public class MemberService {
         return memberRepository.findByLoginId(loginId)
                 // 만약 창고에 그 아이디가 없다면 에러를 던집니다.
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+    }
+    public List<AdminMemberResponseDto> getAdminMembers() {
+        return memberRepository.findAll().stream()
+                .map(AdminMemberResponseDto::new)
+                .collect(Collectors.toList());
+    }
+
+    public AdminMemberResponseDto updateAdminMemo(Long memberId, String adminMemo) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+        member.setAdminMemo(adminMemo == null ? "" : adminMemo.trim());
+        return new AdminMemberResponseDto(memberRepository.save(member));
+    }
+
+    public AdminMemberResponseDto addAdminBenefit(Long memberId, Integer rewardPoints, Integer couponCount) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+        int safePoints = rewardPoints == null ? 0 : rewardPoints;
+        int safeCoupons = couponCount == null ? 0 : couponCount;
+        if (safePoints < 0 || safeCoupons < 0) {
+            throw new IllegalArgumentException("적립금과 쿠폰은 0 이상으로 입력해야 합니다.");
+        }
+
+        member.setRewardPoints((member.getRewardPoints() == null ? 0 : member.getRewardPoints()) + safePoints);
+        member.setCouponCount((member.getCouponCount() == null ? 0 : member.getCouponCount()) + safeCoupons);
+        return new AdminMemberResponseDto(memberRepository.save(member));
+    }
+
+    public AdminMemberResponseDto updateBlacklist(Long memberId, Boolean blacklisted) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+        member.setBlacklisted(Boolean.TRUE.equals(blacklisted));
+        return new AdminMemberResponseDto(memberRepository.save(member));
     }
 }

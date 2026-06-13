@@ -11,6 +11,8 @@ import AdminProductAdd from './pages/AdminProductAdd';
 import AdminProductList from './pages/AdminProductList';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminOrderManagement from './pages/AdminOrderManagement';
+import AdminCustomerCrm from './pages/AdminCustomerCrm';
+import AdminCsBoardManagement from './pages/AdminCsBoardManagement';
 import ProductDetail from './pages/ProductDetail';
 import MyPage from './pages/MyPage';
 import Cart from './pages/Cart';
@@ -40,8 +42,11 @@ function AppContent() {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="orders" element={<AdminOrderManagement />} />
+            <Route path="customers" element={<AdminCustomerCrm />} />
+            <Route path="cs-board" element={<AdminCsBoardManagement />} />
             <Route path="products" element={<AdminProductList />} />
             <Route path="products/add" element={<AdminProductAdd />} />
+            <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Route>
 
           <Route element={<BoxedLayout />}>

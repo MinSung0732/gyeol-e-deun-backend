@@ -44,6 +44,23 @@ public class Member {
     @Column(nullable = false)
     private String role; // "ROLE_USER", "ROLE_ADMIN"
 
+    @Column(length = 1000)
+    private String adminMemo;
+
+    @Column(nullable = false, columnDefinition = "int default 0")
+    private Integer rewardPoints = 0;
+
+    @Column(nullable = false, columnDefinition = "int default 0")
+    private Integer couponCount = 0;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean blacklisted = false;
+
+    @Column(nullable = false, columnDefinition = "bigint default 0")
+    private Long totalPurchaseAmount = 0L;
+
+    private LocalDateTime lastLoginAt;
+
     @CreationTimestamp // 데이터가 INSERT 될 때 자동으로 현재 시간 저장 (가입일)
     @Column(updatable = false)
     private LocalDateTime createdAt;

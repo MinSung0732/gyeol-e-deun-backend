@@ -33,6 +33,10 @@ export const api = {
     products: '/api/admin/products',
     upload: '/api/admin/upload',
     bulkProducts: '/api/admin/products/bulk',
+    members: '/api/admin/members',
+    memberMemo: (memberId) => `/api/admin/members/${memberId}/memo`,
+    memberBenefits: (memberId) => `/api/admin/members/${memberId}/benefits`,
+    memberBlacklist: (memberId) => `/api/admin/members/${memberId}/blacklist`,
   },
   cart: {
     list: '/api/cart',

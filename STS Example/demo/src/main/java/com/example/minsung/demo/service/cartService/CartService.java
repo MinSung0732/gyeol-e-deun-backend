@@ -32,6 +32,9 @@ public class CartService {
     public void addCartItem(String loginId, CartItemAddRequestDto dto) {
         Member member = memberRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+        if (Boolean.TRUE.equals(member.getBlacklisted())) {
+            throw new IllegalArgumentException("구매가 제한된 회원입니다.");
+        }
 
         Product product = productRepository.findById(dto.getProductId())
                 .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));

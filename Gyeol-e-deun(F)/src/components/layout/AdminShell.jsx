@@ -4,6 +4,8 @@ import '../../css/admin-shell.css';
 const NAV_ITEMS = [
   { to: '/admin/dashboard', label: '대시보드 요약', description: '운영 현황과 핵심 지표' },
   { to: '/admin/orders', label: '주문 및 배송 관리', description: '주문 처리와 배송 상태' },
+  { to: '/admin/customers', label: '고객회원 관리 CRM', description: '회원 정보와 고객 대응 이력' },
+  { to: '/admin/cs-board', label: 'CS 및 게시판 관리', description: '리뷰와 문의 응대' },
   { to: '/admin/products', label: '상품 관리', description: '목록, 검색, 할인, 재고' },
   { to: '/admin/products/add', label: '상품 등록', description: '새 상품 추가' },
 ];
@@ -34,13 +36,18 @@ function AdminShell() {
 
         <div className="admin-shell-footer">
           <Link to="/" className="admin-shell-home-link">메인 페이지로 이동</Link>
-          <small>상품, 주문, 배송을 한 화면에서 관리합니다.</small>
+          <small>상품, 주문, 고객 대응을 한 화면에서 관리합니다.</small>
         </div>
       </aside>
 
       <main className="admin-shell-content">
         <div className="admin-shell-topbar">
           <div>
+            <nav className="admin-shell-breadcrumb" aria-label="관리자 위치">
+              <Link to="/">홈</Link>
+              <span>/</span>
+              <span>관리자</span>
+            </nav>
             <span className="admin-shell-topbar-kicker">Admin Dashboard</span>
             <h2>관리자 대시보드</h2>
           </div>

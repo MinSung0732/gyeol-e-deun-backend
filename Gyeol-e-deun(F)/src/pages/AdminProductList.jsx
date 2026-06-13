@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { apiClient, api, authHeaders, getAccessToken } from '../utils/api';
 import '../css/admin.css';
 
+const LOW_STOCK_THRESHOLD = 5;
+const LOW_STOCK_PREVIEW_LIMIT = 4;
+
 function AdminProductList() {
   const hasToken = Boolean(getAccessToken());
   const [isAdmin, setIsAdmin] = useState(hasToken ? null : false);
@@ -12,6 +15,7 @@ function AdminProductList() {
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [expandedCategoryIds, setExpandedCategoryIds] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [lowStockOnly, setLowStockOnly] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [page, setPage] = useState(0);
   const [pageSize] = useState(40);
@@ -20,6 +24,8 @@ function AdminProductList() {
   const [originalPrice, setOriginalPrice] = useState('');
   const [stockValue, setStockValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lowStockExpanded, setLowStockExpanded] = useState(false);
+  const [lowStockListExpanded, setLowStockListExpanded] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
@@ -154,14 +160,28 @@ function AdminProductList() {
       const searchOk = !normalizedSearch
         || String(product.productId).includes(normalizedSearch)
         || (product.name || '').toLowerCase().includes(normalizedSearch);
-      return categoryOk && searchOk;
+      const stockOk = !lowStockOnly || Number(product.stock ?? 0) <= LOW_STOCK_THRESHOLD;
+      return categoryOk && searchOk && stockOk;
     })
-  ), [products, selectedCategory, normalizedSearch]);
+  ), [products, selectedCategory, normalizedSearch, lowStockOnly]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
   const safePage = Math.min(page, totalPages - 1);
   const currentProducts = filteredProducts.slice(safePage * pageSize, safePage * pageSize + pageSize);
   const displayedCount = useMemo(() => selectedIds.size, [selectedIds]);
+  const lowStockProducts = useMemo(() => (
+    products
+      .filter((product) => {
+        const stock = Number(product.stock ?? 0);
+
+        return stock <= LOW_STOCK_THRESHOLD;
+      })
+      .sort((a, b) => Number(a.stock ?? 0) - Number(b.stock ?? 0))
+  ), [products]);
+  const visibleLowStockProducts = lowStockListExpanded
+    ? lowStockProducts
+    : lowStockProducts.slice(0, LOW_STOCK_PREVIEW_LIMIT);
+  const hiddenLowStockCount = Math.max(0, lowStockProducts.length - LOW_STOCK_PREVIEW_LIMIT);
 
   const selectCategory = (categoryId, shouldToggleExpand = false) => {
     setSelectedCategoryId(categoryId);
@@ -337,11 +357,20 @@ function AdminProductList() {
     return <span className="admin-discount-badge">-{percent}%</span>;
   };
 
-  const renderStock = (product) => (
-    product.stock === 0
-      ? <span className="admin-stock-zero">0개 / 품절</span>
-      : <span className="admin-stock-ok">{product.stock}</span>
-  );
+  const renderStock = (product) => {
+    const stock = Number(product.stock ?? 0);
+    const isLowStock = lowStockProducts.some((item) => item.productId === product.productId);
+
+    if (stock === 0) {
+      return <span className="admin-stock-zero">0개 / 품절</span>;
+    }
+
+    if (isLowStock) {
+      return <span className="admin-stock-low">{stock}개 / 임박</span>;
+    }
+
+    return <span className="admin-stock-ok">{stock}</span>;
+  };
 
   const getStatusLabel = (product) => {
     if (product.stock === 0) {
@@ -452,6 +481,18 @@ function AdminProductList() {
                 }}
                 placeholder="상품 ID 또는 제품명"
               />
+              <label className="admin-stock-filter-check">
+                <input
+                  type="checkbox"
+                  checked={lowStockOnly}
+                  onChange={(e) => {
+                    setLowStockOnly(e.target.checked);
+                    setPage(0);
+                    setSelectedIds(new Set());
+                  }}
+                />
+                <span>재고 임박 상품만 보기</span>
+              </label>
               <button
                 type="button"
                 className="btn-submit-nature btn-small btn-secondary"
@@ -568,6 +609,55 @@ function AdminProductList() {
           </div>
 
           {error && <p className="admin-error-text">{error}</p>}
+
+          {lowStockProducts.length > 0 && (
+            <section className={`admin-low-stock-alert ${lowStockExpanded ? 'expanded' : 'collapsed'}`} aria-live="polite">
+              <button
+                type="button"
+                className="admin-low-stock-toggle"
+                onClick={() => setLowStockExpanded((prev) => !prev)}
+                aria-expanded={lowStockExpanded}
+              >
+                <span>
+                  <strong>재고 임박 알림</strong>
+                  <p>
+                    재고가 {LOW_STOCK_THRESHOLD}개 이하인 상품 {lowStockProducts.length}개가 있습니다.
+                  </p>
+                </span>
+                <em>{lowStockExpanded ? '접기' : '펼치기'}</em>
+              </button>
+
+              {lowStockExpanded && (
+                <div className="admin-low-stock-detail">
+                  <div className="admin-low-stock-list">
+                    {visibleLowStockProducts.map((product) => (
+                      <span key={product.productId}>
+                        {product.name} · {Number(product.stock ?? 0)}개
+                      </span>
+                    ))}
+                    {!lowStockListExpanded && hiddenLowStockCount > 0 && (
+                      <button
+                        type="button"
+                        className="admin-low-stock-more"
+                        onClick={() => setLowStockListExpanded(true)}
+                      >
+                        +{hiddenLowStockCount}개 더보기
+                      </button>
+                    )}
+                    {lowStockListExpanded && hiddenLowStockCount > 0 && (
+                      <button
+                        type="button"
+                        className="admin-low-stock-more"
+                        onClick={() => setLowStockListExpanded(false)}
+                      >
+                        간단히 보기
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
 
           <div className="admin-table-wrapper">
             <table className="admin-product-table">

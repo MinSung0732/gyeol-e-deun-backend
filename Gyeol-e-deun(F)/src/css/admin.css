@@ -129,6 +129,25 @@
   border-color: #799a82;
 }
 
+.admin-stock-filter-check {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 1px solid #dbe3dc;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #3a4a3e;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-stock-filter-check input {
+  margin: 0;
+}
+
 .admin-price-stack {
   display: flex;
   flex-direction: column;
@@ -165,9 +184,97 @@
   font-weight: 700;
 }
 
+.admin-stock-low {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background-color: #fdecec;
+  color: #c62828;
+  font-weight: 800;
+}
+
 .admin-stock-ok {
   color: #2E5C3A;
   font-weight: 600;
+}
+
+.admin-low-stock-alert {
+  margin-bottom: 16px;
+  padding: 0;
+  border: 1px solid #f0b7b7;
+  border-left: 5px solid #c62828;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fff5f5 0%, #fdecec 100%);
+  color: #7f1d1d;
+  overflow: hidden;
+}
+
+.admin-low-stock-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-low-stock-toggle strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #b91c1c;
+  font-size: 16px;
+}
+
+.admin-low-stock-toggle p {
+  margin: 0;
+  color: #8a2a2a;
+  font-size: 14px;
+}
+
+.admin-low-stock-toggle em {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #b91c1c;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-low-stock-detail {
+  padding: 0 16px 14px;
+}
+
+.admin-low-stock-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px;
+  max-height: 96px;
+  overflow: auto;
+}
+
+.admin-low-stock-list span,
+.admin-low-stock-more {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background-color: #ffffff;
+  border: 1px solid #f0b7b7;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-low-stock-more {
+  cursor: pointer;
 }
 
 .admin-product-name-cell {
@@ -750,6 +857,15 @@
   .admin-action-bar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .admin-low-stock-alert {
+    border-left-width: 4px;
+  }
+
+  .admin-low-stock-toggle {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 
